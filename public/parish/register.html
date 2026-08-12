@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>성당 등록 | Paxlink</title>
+  <link rel="stylesheet" href="/parish/parish.css">
+  <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+</head>
+<body class="register-body">
+  <header class="register-header">
+    <a class="brand" href="/parish"><span class="brand-mark">P</span><span>Paxlink</span></a>
+    <a class="header-login" href="/parish">관리자 로그인</a>
+  </header>
+  <main class="registration-page">
+    <div class="registration-title">
+      <p class="eyebrow">PARISH REGISTRATION</p>
+      <h1>성당 등록</h1>
+      <p>담당자 이메일 인증 후 성당 정보를 등록할 수 있습니다.</p>
+    </div>
+
+    <section class="registration-card verification-section">
+      <div class="step-title"><span>1</span><div><h2>담당자 이메일 인증</h2><p>성당 등록을 담당하는 분의 이메일을 인증해 주세요.</p></div></div>
+      <div class="field"><label for="reg-manager-name">담당자 이름 <i>*</i></label><input id="reg-manager-name" autocomplete="name" maxlength="100" placeholder="담당자 이름을 입력해 주세요"><p class="field-error" data-error-for="reg-manager-name"></p></div>
+      <div class="inline-fields">
+        <div class="field grow"><label for="reg-email">담당자 이메일 <i>*</i></label><input id="reg-email" type="email" autocomplete="email" placeholder="manager@example.com"><p class="field-error" data-error-for="reg-email"></p></div>
+        <button id="send-registration-code" class="secondary compact" type="button">인증코드 받기</button>
+      </div>
+      <div id="verification-code-row" class="inline-fields" hidden>
+        <div class="field grow"><label for="reg-code">인증코드 <i>*</i></label><input id="reg-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6자리 인증코드"><p class="field-error" data-error-for="reg-code"></p></div>
+        <button id="verify-registration-code" class="primary compact" type="button">인증 확인</button>
+      </div>
+      <p id="registration-message" class="message left" role="status"></p>
+    </section>
+
+    <section id="details-section" class="registration-card locked" aria-disabled="true">
+      <div class="locked-cover"><span>🔒</span><strong>이메일 인증 후 입력할 수 있습니다</strong></div>
+      <div class="step-title"><span>2</span><div><h2>성당 기본 정보</h2><p>등록할 성당의 정보를 정확히 입력해 주세요.</p></div></div>
+      <form id="registration-form" novalidate>
+        <fieldset disabled>
+          <div class="form-grid two">
+            <div class="field"><label for="name">성당 이름 <i>*</i></label><input id="name" name="name" minlength="2" maxlength="120" placeholder="예: 명동대성당" required><p class="field-error" data-error-for="name"></p></div>
+            <div class="field"><label for="parishCode">성당 ID <i>*</i></label><input id="parishCode" name="parishCode" maxlength="40" placeholder="영문/숫자 2~40자" required><p class="field-error" data-error-for="parishCode"></p></div>
+            <div class="field"><label for="phone">대표전화번호 <i>*</i></label><input id="phone" name="phone" inputmode="numeric" maxlength="13" placeholder="02-0000-0000 / 000-000-0000" required><p class="field-error" data-error-for="phone"></p></div>
+            <div class="field"><label for="officePhone">행정사무실 전화번호 <i>*</i></label><input id="officePhone" name="officePhone" inputmode="numeric" maxlength="13" placeholder="02-0000-0000 / 000-000-0000" required><p class="field-error" data-error-for="officePhone"></p></div>
+          </div>
+          <div class="section-divider"><span>주소</span></div>
+          <div class="address-grid">
+            <div class="field postal"><label for="postalCode">우편번호 <i>*</i></label><input id="postalCode" name="postalCode" readonly placeholder="우편번호"><p class="field-error" data-error-for="postalCode"></p></div>
+            <button id="find-address" class="secondary address-button" type="button">카카오 주소 검색</button>
+            <div class="field full"><label for="address">기본 주소 <i>*</i></label><input id="address" name="address" readonly placeholder="주소 검색 버튼을 눌러 주세요"><p class="field-error" data-error-for="address"></p></div>
+            <div class="field full"><label for="addressDetail">상세 주소 <i>*</i></label><input id="addressDetail" name="addressDetail" maxlength="255" placeholder="상세 주소를 입력해 주세요" required><p class="field-error" data-error-for="addressDetail"></p></div>
+          </div>
+          <div class="section-divider"><span>관할 구역</span></div>
+          <div class="form-grid three">
+            <div class="field"><label for="diocese">교구 <i>*</i></label><input id="diocese" name="diocese" maxlength="120" placeholder="예: 서울대교구" required><p class="field-error" data-error-for="diocese"></p></div>
+            <div class="field"><label for="district">지구 <i>*</i></label><input id="district" name="district" maxlength="120" placeholder="예: 중서울지역" required><p class="field-error" data-error-for="district"></p></div>
+            <div class="field"><label for="jurisdiction">관할 <i>*</i></label><input id="jurisdiction" name="jurisdiction" maxlength="120" placeholder="예: 제1지구" required><p class="field-error" data-error-for="jurisdiction"></p></div>
+          </div>
+          <div class="section-divider"><span>추가 정보</span></div>
+          <div class="form-grid two">
+            <div class="field"><label for="fax">팩스</label><input id="fax" name="fax" inputmode="numeric" maxlength="13" placeholder="02-0000-0000 / 000-000-0000"><p class="field-error" data-error-for="fax"></p></div>
+            <div class="field"><label for="homepage">홈페이지</label><input id="homepage" name="homepage" type="url" maxlength="500" placeholder="https://example.com"><p class="field-error" data-error-for="homepage"></p></div>
+          </div>
+          <button class="primary submit-registration" type="submit">성당 등록 완료</button>
+        </fieldset>
+      </form>
+    </section>
+  </main>
+  <div id="custom-alert" class="custom-alert" hidden>
+    <div class="custom-alert-backdrop"></div>
+    <section class="custom-alert-box" role="alertdialog" aria-modal="true" aria-labelledby="custom-alert-title" aria-describedby="custom-alert-message">
+      <div class="custom-alert-icon" aria-hidden="true">✓</div>
+      <h2 id="custom-alert-title">알림</h2>
+      <p id="custom-alert-message"></p>
+      <button id="custom-alert-confirm" class="primary" type="button">확인</button>
+    </section>
+  </div>
+  <script src="/assets/parish-register.js?v=2" defer></script>
+</body>
+</html>

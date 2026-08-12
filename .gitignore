@@ -1,0 +1,12 @@
+.env
+.env.*
+!.env.example
+node_modules/
+dist/
+public/assets/parish.js
+public/assets/parish-register.js
+public/assets/parish-dashboard.js
+public/assets/parish-priests.js
+public/assets/supervisor.js
+*.log
+.server-*.log

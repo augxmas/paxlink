@@ -1,0 +1,27 @@
+{
+  "name": "paxlink",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc -p tsconfig.json && esbuild src/client/parish.ts --bundle --platform=browser --target=es2022 --outfile=public/assets/parish.js && esbuild src/client/parish-register.ts --bundle --platform=browser --target=es2022 --outfile=public/assets/parish-register.js && esbuild src/client/parish-dashboard.ts --bundle --platform=browser --target=es2022 --outfile=public/assets/parish-dashboard.js && esbuild src/client/parish-priests.ts --bundle --platform=browser --target=es2022 --outfile=public/assets/parish-priests.js && esbuild src/client/parish-history.ts --bundle --platform=browser --target=es2022 --outfile=public/assets/parish-history.js && esbuild src/client/parish-patron-saint.ts --bundle --platform=browser --target=es2022 --outfile=public/assets/parish-patron-saint.js && esbuild src/client/parish-administrative-guide.ts --bundle --platform=browser --target=es2022 --outfile=public/assets/parish-administrative-guide.js && esbuild src/client/parish-videos.ts --bundle --platform=browser --target=es2022 --outfile=public/assets/parish-videos.js && esbuild src/client/parish-shrines.ts --bundle --platform=browser --target=es2022 --outfile=public/assets/parish-shrines.js && esbuild src/client/parishioner.ts --bundle --platform=browser --target=es2022 --outfile=public/assets/parishioner.js && esbuild src/client/parishioner-register.ts --bundle --platform=browser --target=es2022 --outfile=public/assets/parishioner-register.js && esbuild src/client/supervisor.ts --bundle --platform=browser --target=es2022 --outfile=public/assets/supervisor.js",
+    "start": "node dist/server.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "sync:shrines": "node scripts/sync-cbck-shrines.js"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.1",
+    "express": "^5.1.0",
+    "mysql2": "^3.14.3",
+    "nodemailer": "^9.0.3"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.3",
+    "@types/node": "^24.0.14",
+    "@types/nodemailer": "^7.0.0",
+    "esbuild": "^0.25.6",
+    "tsx": "^4.20.3",
+    "typescript": "^5.8.3"
+  }
+}

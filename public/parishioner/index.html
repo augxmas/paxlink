@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>신도 로그인 | Paxlink</title>
+  <link rel="stylesheet" href="/parishioner/parishioner.css?v=20260719-3">
+</head>
+<body>
+  <main class="member-shell">
+    <section class="member-brand">
+      <a href="/parishioner" class="member-logo"><b>P</b> Paxlink</a>
+      <div><p>PARISH COMMUNITY</p><h1>우리 성당과<br>함께하는 신앙생활</h1><span>소속 성당을 선택하고 안전하게 로그인하세요.</span></div>
+    </section>
+    <section class="member-area">
+      <div class="member-card">
+        <header><em>WELCOME</em><h2>신도 로그인</h2><p>성당과 가입 이메일로 인증해 주세요.</p></header>
+        <form id="member-login-form">
+          <label>성당</label>
+          <div class="parish-picker">
+            <input id="member-parish-search" placeholder="성당 이름을 입력해 주세요" autocomplete="off">
+            <input id="member-parish-id" type="hidden">
+            <div id="member-parish-results" class="picker-results" hidden></div>
+          </div>
+          <label>이메일</label>
+          <input id="member-email" type="email" required placeholder="member@example.com">
+          <button id="member-send-code" class="green-outline" type="button">이메일로 인증코드 받기</button>
+          <div id="member-code-panel" hidden>
+            <label>인증코드</label>
+            <input id="member-code" inputmode="numeric" maxlength="6" placeholder="6자리 인증코드">
+            <button id="member-login-submit" class="green-button" type="submit">인증 확인 후 로그인</button>
+          </div>
+          <p id="member-message" class="member-message"></p>
+        </form>
+        <footer>아직 회원이 아니신가요? <a href="/parishioner/register">회원가입</a></footer>
+      </div>
+    </section>
+  </main>
+  <script src="/assets/parishioner.js?v=20260719-3" defer></script>
+</body>
+</html>
