@@ -969,6 +969,44 @@
     }
   }
   new MutationObserver(mountMissionWorkspaces).observe(document.body, { childList: true, subtree: true });
+  var memberMissionFormSync = /* @__PURE__ */ new WeakMap();
+  function prepareMemberMissionRegistration() {
+    const form = document.querySelector("#member-mission-form");
+    if (!form) return;
+    let actions = document.querySelector("[data-member-mission-actions]");
+    const existing = memberMissionFormSync.get(form);
+    if (existing && actions) {
+      existing();
+      const footer2 = form.closest(".registration-form-modal")?.querySelector(":scope>.member-modal-box>footer");
+      if (footer2 && !footer2.contains(actions)) footer2.prepend(actions);
+      return;
+    }
+    form.querySelector(":scope>header")?.remove();
+    const title = form.querySelector("#member-mission-title"), content = form.querySelector("#member-mission-content"), from = form.querySelector("#member-mission-from"), to = form.querySelector("#member-mission-to"), tags = form.querySelector("#member-mission-tags");
+    [title, content, from, to, tags].forEach((control) => {
+      control.required = true;
+      const label = control.closest("label");
+      if (label && !label.querySelector(".mission-required")) label.insertAdjacentHTML("afterbegin", '<span class="mission-required" aria-hidden="true">* </span>');
+    });
+    actions = document.createElement("div");
+    actions.className = "member-mission-form-actions";
+    actions.dataset.memberMissionActions = "true";
+    actions.innerHTML = '<button class="green-button" type="submit" form="member-mission-form" disabled>\uC2B9\uC778 \uC694\uCCAD</button>';
+    form.append(actions);
+    const submit2 = actions.querySelector("button"), sync = () => {
+      to.min = from.value;
+      submit2.disabled = !title.value.trim() || !content.value.trim() || !from.value || !to.value || to.value < from.value || !tags.value.trim() || !form.checkValidity();
+    };
+    form.addEventListener("input", sync);
+    form.addEventListener("change", sync);
+    memberMissionFormSync.set(form, sync);
+    sync();
+    const footer = form.closest(".registration-form-modal")?.querySelector(":scope>.member-modal-box>footer");
+    if (footer) footer.prepend(actions);
+  }
+  new MutationObserver(prepareMemberMissionRegistration).observe(document.body, { childList: true, subtree: true });
+  queueMicrotask(prepareMemberMissionRegistration);
+  document.head.insertAdjacentHTML("beforeend", "<style>.mission-required{color:#d94350;font-weight:800}.member-mission-form-actions{display:flex;justify-content:center;margin:20px -20px -20px;padding:16px 20px;border-top:1px solid var(--line);background:#fff}.member-mission-form-actions .green-button{width:auto;min-width:150px;margin:0}.member-mission-form-actions .green-button:disabled{opacity:.45;cursor:not-allowed;box-shadow:none}.registration-form-modal-body #member-mission-form{padding-top:0}.registration-form-modal-body #member-mission-form>.member-mission-form-actions{margin-right:-24px;margin-bottom:-20px;margin-left:-24px}.registration-form-modal>.member-modal-box>footer>.member-mission-form-actions{display:contents}.registration-form-modal>.member-modal-box>footer:has(.member-mission-form-actions){gap:10px}.registration-form-modal>.member-modal-box>footer:has(.member-mission-form-actions)>button,.registration-form-modal>.member-modal-box>footer .member-mission-form-actions button{width:auto;min-width:130px;height:42px;margin:0}@media(max-width:650px){.registration-form-modal-body #member-mission-form>.member-mission-form-actions{margin-right:-14px;margin-left:-14px}}</style>");
   function renderMissionTags() {
     const input = document.querySelector("#member-mission-tags"), preview = document.querySelector("#member-mission-tag-preview");
     if (!input || !preview) return;
@@ -978,7 +1016,7 @@
   }
   async function createMission(event) {
     event.preventDefault();
-    const title = document.querySelector("#member-mission-title"), content = document.querySelector("#member-mission-content"), tags = document.querySelector("#member-mission-tags"), from = document.querySelector("#member-mission-from"), to = document.querySelector("#member-mission-to"), error = document.querySelector("#member-mission-error");
+    const title = document.querySelector("#member-mission-title"), content = document.querySelector("#member-mission-content"), tags = document.querySelector("#member-mission-tags"), from = document.querySelector("#member-mission-from"), to = document.querySelector("#member-mission-to"), error = document.querySelector("#member-mission-error"), registrationModal = event.currentTarget.closest(".registration-form-modal");
     error.textContent = "";
     try {
       await catacombApi("/api/parishioner/missions", { method: "POST", body: JSON.stringify({ title: title.value, content: content.value, tags: tags.value, applicationFrom: from.value, applicationTo: to.value, anonymous: false }) });
@@ -988,6 +1026,8 @@
       from.value = "";
       to.value = "";
       renderMissionTags();
+      registrationModal?.remove();
+      document.body.classList.remove("modal-open");
       await loadMyMissions();
       modal("\uBBF8\uC158 \uB4F1\uB85D", "<p>\uAD00\uB9AC\uC790\uC5D0\uAC8C \uC2B9\uC778 \uC694\uCCAD\uC744 \uC804\uB2EC\uD588\uC2B5\uB2C8\uB2E4.</p>");
     } catch (reason) {

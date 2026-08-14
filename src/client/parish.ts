@@ -8,6 +8,7 @@ const results = document.querySelector<HTMLDivElement>("#parish-results")!;
 const codePanel = document.querySelector<HTMLElement>("#code-panel")!;
 const codeInput = document.querySelector<HTMLInputElement>("#code")!;
 const sendButton = document.querySelector<HTMLButtonElement>("#send-code")!;
+const codeEmail = document.querySelector<HTMLElement>("#code-email")!;
 const message = document.querySelector<HTMLParagraphElement>("#message")!;
 const rememberParish = document.querySelector<HTMLInputElement>("#remember-parish")!;
 const rememberEmail = document.querySelector<HTMLInputElement>("#remember-email")!;
@@ -90,6 +91,8 @@ sendButton.addEventListener("click", async () => {
     const data = await response.json() as { message: string; devCode?: string };
     if (!response.ok) throw new Error(data.message);
     codePanel.hidden = false;
+    codeEmail.textContent = email.value;
+    sendButton.textContent = "인증코드 다시 받기";
     codeInput.focus();
     setMessage(data.devCode ? `${data.message} 가상 인증번호: ${data.devCode}` : data.message);
   } catch (error) { setMessage((error as Error).message, true); }

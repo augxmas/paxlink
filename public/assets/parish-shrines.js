@@ -1012,14 +1012,26 @@
   }
   document.querySelector('[data-sharing-view="mission"]')?.addEventListener("click", () => void load3());
   var missionHeader = document.querySelector(".mission-admin>header");
-  if (missionHeader && !document.querySelector("#mission-admin-create")) {
+  if (missionHeader && !document.querySelector("#mission-admin-reload")) {
     const actions = document.createElement("div");
     actions.className = "mission-admin-head-actions";
     const count = document.querySelector("#mission-admin-count");
     missionHeader.append(actions);
     actions.append(count);
-    actions.insertAdjacentHTML("beforeend", '<button id="mission-admin-create" class="primary" type="button">+ \uBBF8\uC158 \uB4F1\uB85D</button>');
-    document.querySelector("#mission-admin-create").onclick = openCreate;
+    actions.insertAdjacentHTML("beforeend", '<button id="mission-admin-reload" class="grid-reload-button" type="button"><span aria-hidden="true">\u21BB</span> Reload</button>');
+    document.querySelector("#mission-admin-reload").onclick = async (event) => {
+      const button = event.currentTarget;
+      button.disabled = true;
+      button.classList.add("loading");
+      try {
+        await load3();
+      } finally {
+        window.setTimeout(() => {
+          button.disabled = false;
+          button.classList.remove("loading");
+        }, 350);
+      }
+    };
   }
   new MutationObserver(() => {
     document.querySelectorAll(".mission-applicant-count").forEach((applicants) => {
@@ -1081,38 +1093,18 @@
       void decide(id, "rejected", value2);
     };
   }
-  function openCreate() {
-    document.querySelector("#mission-create-modal")?.remove();
-    document.body.insertAdjacentHTML("beforeend", `<div id="mission-create-modal" class="priest-modal"><div class="priest-modal-backdrop" data-mission-create-close></div><section class="priest-modal-box mission-create-box" role="dialog" aria-modal="true"><header><div><p>PARISH MISSION</p><h2>\uBBF8\uC158 \uB4F1\uB85D</h2><small>\uC131\uB2F9\uBA85\uC73C\uB85C \uB4F1\uB85D\uB418\uBA70 \uC989\uC2DC \uC2B9\uC778\xB7\uACF5\uAC1C\uB429\uB2C8\uB2E4.</small></div><button type="button" data-mission-create-close>\xD7</button></header><form id="mission-create-form"><div class="mission-create-body"><label>\uC81C\uBAA9 <i>*</i><input id="mission-create-title" maxlength="200" required placeholder="\uBBF8\uC158 \uC81C\uBAA9\uC744 \uC785\uB825\uD574 \uC8FC\uC138\uC694"></label><label>\uB0B4\uC6A9 <i>*</i><textarea id="mission-create-content" maxlength="20000" rows="7" required placeholder="\uD560\uC77C\uACFC \uD544\uC694\uD55C \uC5ED\uB7C9\uC5D0 \uB300\uD574 \uC801\uC5B4\uC8FC\uC138\uC694"></textarea></label><label>\uD0DC\uADF8<input id="mission-create-tags" maxlength="1000" placeholder="\uC27C\uD45C(,) \uB610\uB294 \uB744\uC5B4\uC4F0\uAE30\uB85C \uAD6C\uBD84"></label><div id="mission-create-tag-preview" class="mission-tags"></div><small>\uC27C\uD45C \uB610\uB294 \uACF5\uBC31\uC744 \uC785\uB825\uD558\uBA74 \uD0DC\uADF8\uBCC4\uB85C \uAD6C\uBD84\uB429\uB2C8\uB2E4.</small><p id="mission-create-error"></p></div><footer><button class="secondary" data-mission-create-close type="button">\uCDE8\uC18C</button><button class="primary" type="submit">\uB4F1\uB85D \uBC0F \uACF5\uAC1C</button></footer></form></section></div>`);
-    document.body.classList.add("modal-open");
-    const close2 = () => {
-      document.querySelector("#mission-create-modal")?.remove();
-      document.body.classList.remove("modal-open");
-    };
-    document.querySelectorAll("[data-mission-create-close]").forEach((el) => el.addEventListener("click", close2));
-    const tags = document.querySelector("#mission-create-tags");
-    tags.oninput = () => {
-      const values = [...new Set(tags.value.split(/[,\s]+/).map((value2) => value2.replace(/^#/, "").trim()).filter(Boolean))];
-      document.querySelector("#mission-create-tag-preview").innerHTML = values.map((value2) => `<span>#${esc(value2)}</span>`).join("");
-    };
-    document.querySelector("#mission-create-form").onsubmit = async (event) => {
-      event.preventDefault();
-      const error = document.querySelector("#mission-create-error");
-      error.textContent = "";
-      try {
-        const result = await api2("/api/parish/missions", { method: "POST", body: JSON.stringify({ title: document.querySelector("#mission-create-title").value, content: document.querySelector("#mission-create-content").value, tags: tags.value }) });
-        close2();
-        await load3();
-        window.dispatchEvent(new CustomEvent("parish:notice", { detail: result.message }));
-      } catch (reason) {
-        error.textContent = reason.message;
-      }
-    };
-  }
   new MutationObserver(() => {
     const tags = document.querySelector("#mission-create-tags");
     if (!tags || document.querySelector("#mission-create-from")) return;
     tags.closest("label").insertAdjacentHTML("beforebegin", '<div class="mission-create-period"><label>\uB2EC\uB780\uD2B8 \uBAA8\uC9D1 \uC2DC\uC791\uC77C <i>*</i><input id="mission-create-from" type="date" required></label><span>~</span><label>\uB2EC\uB780\uD2B8 \uBAA8\uC9D1 \uC885\uB8CC\uC77C <i>*</i><input id="mission-create-to" type="date" required></label></div>');
+    const form3 = document.querySelector("#mission-create-form"), title = document.querySelector("#mission-create-title"), content = document.querySelector("#mission-create-content"), from = document.querySelector("#mission-create-from"), to = document.querySelector("#mission-create-to"), submit = form3.querySelector('button[type="submit"]');
+    const sync = () => {
+      to.min = from.value;
+      submit.disabled = !title.value.trim() || !content.value.trim() || !from.value || !to.value || to.value < from.value || !form3.checkValidity();
+    };
+    form3.addEventListener("input", sync);
+    form3.addEventListener("change", sync);
+    sync();
   }).observe(document.body, { childList: true, subtree: true });
   async function openApplicants(id, title) {
     document.querySelector("#mission-applicants-modal")?.remove();

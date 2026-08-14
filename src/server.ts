@@ -778,6 +778,49 @@ function normalizeEmail(value: unknown) {
   return String(value ?? "").trim().toLowerCase();
 }
 
+function verificationEmailHtml(code: string, purpose: string) {
+  return `<!doctype html>
+<html lang="ko">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Paxlink 인증코드</title></head>
+<body style="margin:0;padding:0;background:#f3f6fa;font-family:'Apple SD Gothic Neo','Noto Sans KR',Arial,sans-serif;color:#1e2d43;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#f3f6fa;">
+    <tr><td align="center" style="padding:40px 16px;">
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:560px;background:#ffffff;border:1px solid #e0e7f0;border-radius:20px;overflow:hidden;box-shadow:0 12px 36px rgba(21,52,95,.08);">
+        <tr><td style="height:6px;background:#1769e0;font-size:0;line-height:0;">&nbsp;</td></tr>
+        <tr><td style="padding:34px 38px 0;">
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0"><tr>
+            <td width="42" height="42" align="center" style="width:42px;height:42px;border-radius:12px;background:#1769e0;color:#ffffff;font-size:21px;font-weight:800;">P</td>
+            <td style="padding-left:12px;color:#15345f;font-size:20px;font-weight:800;letter-spacing:-.4px;">Paxlink</td>
+          </tr></table>
+        </td></tr>
+        <tr><td style="padding:30px 38px 10px;">
+          <div style="color:#1769e0;font-size:11px;font-weight:800;letter-spacing:1.5px;">EMAIL VERIFICATION</div>
+          <h1 style="margin:10px 0 12px;color:#172b49;font-size:25px;line-height:1.35;letter-spacing:-1px;">이메일 인증을 완료해 주세요</h1>
+          <p style="margin:0;color:#66758b;font-size:14px;line-height:1.75;">${purpose}을 위한 인증코드입니다.<br>아래 코드를 인증 화면에 입력해 주세요.</p>
+        </td></tr>
+        <tr><td style="padding:18px 38px;">
+          <div style="padding:24px 16px;border:1px solid #c9dcf7;border-radius:14px;background:#f4f8ff;text-align:center;">
+            <div style="margin-bottom:9px;color:#6d7f98;font-size:11px;font-weight:700;letter-spacing:.8px;">인증코드</div>
+            <div style="color:#1769e0;font-family:Arial,sans-serif;font-size:34px;font-weight:800;letter-spacing:9px;line-height:1.2;">${code}</div>
+          </div>
+        </td></tr>
+        <tr><td style="padding:4px 38px 34px;">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="border-radius:10px;background:#fff8e8;"><tr>
+            <td width="38" valign="top" style="padding:14px 0 14px 15px;color:#b57900;font-size:16px;">●</td>
+            <td style="padding:13px 15px 13px 0;color:#74591c;font-size:12px;line-height:1.65;"><strong>10분 안에 입력해 주세요.</strong><br>본인이 요청하지 않았다면 이 메일을 무시하셔도 됩니다.</td>
+          </tr></table>
+        </td></tr>
+        <tr><td style="padding:22px 38px;border-top:1px solid #e8edf4;background:#f9fbfd;color:#8a96a8;font-size:11px;line-height:1.65;text-align:center;">
+          이 메일은 Paxlink 인증 요청에 의해 자동 발송되었습니다.<br>보안을 위해 인증코드를 다른 사람에게 알려주지 마세요.
+        </td></tr>
+      </table>
+      <p style="margin:18px 0 0;color:#9aa5b4;font-size:11px;">© 2026 Paxlink</p>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+}
+
 async function sendCode(email: string, code: string, purpose: string) {
   if (process.env.EMAIL_DELIVERY_MODE === "mock") return code;
   if (process.env.SMTP_HOST) {
@@ -797,6 +840,7 @@ async function sendCode(email: string, code: string, purpose: string) {
       to: email,
       subject: `[Paxlink] ${purpose} 인증코드`,
       text: `인증코드는 ${code}입니다. 10분 안에 입력해 주세요.`,
+      html: verificationEmailHtml(code, purpose),
     });
     return undefined;
   }
@@ -1049,6 +1093,7 @@ app.post("/api/parish-auth/code", async (req, res, next) => {
         to: email,
         subject: "[Paxlink] 성당 관리자 로그인 인증코드",
         text: `인증코드는 ${code}입니다. 10분 안에 입력해 주세요.`,
+        html: verificationEmailHtml(code, "성당 관리자 로그인"),
       });
     } else if (process.env.NODE_ENV !== "production") {
       devCode = code;
@@ -1212,7 +1257,7 @@ app.patch("/api/parish/profile", requireParish, async (req, res, next) => {
 });
 
 const priestFields = {
-  name: { column: "name", required: true }, baptismalName: { column: "baptismal_name", required: false },
+  name: { column: "name", required: true }, baptismalName: { column: "baptismal_name", required: true },
   role: { column: "role", required: true }, appointmentDate: { column: "appointment_date", required: false },
   affiliation: { column: "affiliation", required: false }, generation: { column: "generation", required: false },
   birthDate: { column: "birth_date", required: false }, mobile: { column: "mobile", required: false },
@@ -1241,9 +1286,9 @@ async function ensurePriestRevision(parishId: number) {
 async function applyPriestSettings(connection: mysql.PoolConnection, parishId: number, settings: Array<Record<string, unknown>>) {
   for (const key of Object.keys(priestFields) as PriestFieldKey[]) {
     const item = settings.find((entry) => entry.key === key) ?? {};
-    const alwaysEnabled = key === "status" || key === "incomingDate" || key === "outgoingDate";
+    const alwaysEnabled = key === "baptismalName" || key === "status" || key === "incomingDate" || key === "outgoingDate";
     const enabled = alwaysEnabled ? true : Boolean(item.enabled);
-    const required = key === "incomingDate" ? true : enabled && Boolean(item.required);
+    const required = key === "baptismalName" || key === "incomingDate" ? true : enabled && Boolean(item.required);
     const searchable = enabled && Boolean(item.searchable) && key !== "outgoingDate";
     const displayOrder = Number.isInteger(Number(item.displayOrder)) ? Math.max(0, Number(item.displayOrder)) : 0;
     const alignment = ["left", "center", "right"].includes(String(item.alignment)) ? String(item.alignment) : "left";
@@ -1364,6 +1409,7 @@ async function validatePriest(parishId: number, values: ReturnType<typeof priest
   if (values.generation && (!/^\d+$/.test(values.generation) || Number(values.generation) < 1)) errors.generation = "세대는 1 이상의 숫자로 입력해 주세요.";
   if (values.mobile && !mobilePattern.test(values.mobile)) errors.mobile = "모바일폰번호는 010으로 시작하는 11자리 번호를 입력해 주세요.";
   if (values.email && !/^\S+@\S+\.\S+$/.test(values.email)) errors.email = "올바른 이메일을 입력해 주세요.";
+  if (!values.baptismalName) errors.baptismalName = "세례명을 입력해 주세요.";
   for (const key of ["appointmentDate", "birthDate", "incomingDate", "outgoingDate"] as const) if (values[key] && !/^\d{4}-\d{2}-\d{2}$/.test(values[key])) errors[key] = "날짜 형식을 확인해 주세요.";
   if (creating && !values.incomingDate) errors.incomingDate = "최초 등록 시 전입일은 필수입니다.";
   return errors;
