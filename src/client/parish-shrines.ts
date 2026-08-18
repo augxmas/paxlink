@@ -59,4 +59,5 @@ document.querySelector("#shrine-review-search")!.addEventListener("click",loadSh
 import "./parish-notices";
 import "./parish-parishioners";
 import "./parish-missions";
+import "./parish-catacomb-admin";
 export {};

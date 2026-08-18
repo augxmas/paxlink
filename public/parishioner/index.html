@@ -4,7 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>신도 로그인 | Paxlink</title>
-  <link rel="stylesheet" href="/parishioner/parishioner.css?v=20260719-3">
+  <link rel="stylesheet" href="/parishioner/parishioner.css?v=20260817-3">
+  <style>.login-save-options{justify-content:flex-start}</style>
 </head>
 <body>
   <main class="member-shell">
@@ -18,7 +19,7 @@
         <form id="member-login-form">
           <label>성당</label>
           <div class="parish-picker">
-            <input id="member-parish-search" placeholder="성당 이름을 입력해 주세요" autocomplete="off">
+            <input id="member-parish-search" placeholder="성당 이름을 3글자 이상 입력해 주세요" autocomplete="off" autofocus>
             <input id="member-parish-id" type="hidden">
             <div id="member-parish-results" class="picker-results" hidden></div>
           </div>
@@ -36,6 +37,6 @@
       </div>
     </section>
   </main>
-  <script src="/assets/parishioner.js?v=20260719-3" defer></script>
+  <script src="/assets/parishioner.js?v=20260817-3" defer></script>
 </body>
 </html>

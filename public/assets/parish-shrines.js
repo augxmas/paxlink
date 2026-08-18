@@ -13,10 +13,10 @@
       const file = form3?.querySelector('[name="attachment"]')?.files?.[0];
       if (file) {
         if (file.size > 5 * 1024 * 1024) throw new Error("\uCCA8\uBD80\uD30C\uC77C\uC740 5MB \uC774\uD558\uB9CC \uB4F1\uB85D\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4.");
-        const data2 = await new Promise((resolve, reject) => {
+        const data2 = await new Promise((resolve, reject2) => {
           const reader = new FileReader();
           reader.onload = () => resolve(String(reader.result).split(",")[1] ?? "");
-          reader.onerror = () => reject(new Error("\uCCA8\uBD80\uD30C\uC77C\uC744 \uC77D\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4."));
+          reader.onerror = () => reject2(new Error("\uCCA8\uBD80\uD30C\uC77C\uC744 \uC77D\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4."));
           reader.readAsDataURL(file);
         });
         payload.attachment = { name: file.name, type: file.type || "application/octet-stream", data: data2 };
@@ -254,6 +254,111 @@
       }
     });
   }
+  var draggedSchedule = null;
+  var scheduleClipboard = null;
+  var selectedCalendarSchedule = null;
+  var activeCalendarDate = "";
+  function schedulePayload(item, scheduleDate) {
+    return { scheduleDate, startTime: item.startTime ?? "", endTime: item.endTime ?? "", category: item.category, scheduleType: item.scheduleType ?? "", title: item.title, location: item.location ?? "", content: item.content ?? "" };
+  }
+  function calendarNotice(message) {
+    window.dispatchEvent(new CustomEvent("parish:notice", { detail: message }));
+  }
+  async function moveCalendarSchedule(item, targetDate) {
+    if (item.scheduleDate === targetDate) return;
+    if (targetDate < dateKey(/* @__PURE__ */ new Date())) return calendarNotice("\uC9C0\uB09C \uB0A0\uC9DC\uB85C \uC77C\uC815\uC744 \uC774\uB3D9\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.");
+    try {
+      await scheduleApi(`/api/parish/schedules/${item.id}`, { method: "PATCH", body: JSON.stringify(schedulePayload(item, targetDate)) });
+      calendarNotice(`'${item.title}' \uC77C\uC815\uC744 ${targetDate}\uB85C \uC774\uB3D9\uD588\uC2B5\uB2C8\uB2E4.`);
+      await loadSchedule();
+    } catch (error) {
+      calendarNotice(error.message);
+      renderCalendar();
+    }
+  }
+  async function pasteCalendarSchedule(targetDate) {
+    if (!scheduleClipboard) return;
+    try {
+      await scheduleApi("/api/parish/schedules", { method: "POST", body: JSON.stringify(schedulePayload(scheduleClipboard, targetDate)) });
+      calendarNotice(`'${scheduleClipboard.title}' \uC77C\uC815\uC744 ${targetDate}\uC5D0 \uBCF5\uC0AC\uD588\uC2B5\uB2C8\uB2E4.`);
+      await loadSchedule();
+    } catch (error) {
+      calendarNotice(error.message);
+    }
+  }
+  function enableScheduleCalendarInteractions() {
+    const calendar = document.querySelector(".parish-calendar");
+    if (!calendar) return;
+    calendar.querySelectorAll("[data-calendar-date]").forEach((day) => {
+      const date = day.dataset.calendarDate, items4 = calendarItems.filter((item) => item.scheduleDate === date);
+      day.onfocus = () => activeCalendarDate = date;
+      day.onmouseenter = () => activeCalendarDate = date;
+      day.ondragover = (event) => {
+        if (!draggedSchedule) return;
+        event.preventDefault();
+        day.classList.add("schedule-drop-target");
+      };
+      day.ondragleave = () => day.classList.remove("schedule-drop-target");
+      day.ondrop = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        day.classList.remove("schedule-drop-target");
+        const item = draggedSchedule;
+        draggedSchedule = null;
+        if (item) void moveCalendarSchedule(item, date);
+      };
+      day.querySelectorAll("em").forEach((event, index) => {
+        const item = items4[index];
+        if (!item) return;
+        event.draggable = true;
+        event.tabIndex = 0;
+        event.dataset.scheduleId = String(item.id);
+        event.title = `${item.title} \xB7 \uB4DC\uB798\uADF8\uD558\uC5EC \uC774\uB3D9 \xB7 \uC120\uD0DD \uD6C4 Ctrl+C\uB85C \uBCF5\uC0AC`;
+        event.onclick = (click) => {
+          click.preventDefault();
+          click.stopPropagation();
+          selectedCalendarSchedule = item;
+          activeCalendarDate = date;
+          calendar.querySelectorAll("em.schedule-selected").forEach((element) => element.classList.remove("schedule-selected"));
+          event.classList.add("schedule-selected");
+        };
+        event.onfocus = () => {
+          selectedCalendarSchedule = item;
+          activeCalendarDate = date;
+        };
+        event.ondragstart = (drag) => {
+          draggedSchedule = item;
+          selectedCalendarSchedule = item;
+          drag.dataTransfer?.setData("text/plain", String(item.id));
+          if (drag.dataTransfer) drag.dataTransfer.effectAllowed = "move";
+          event.classList.add("schedule-dragging");
+        };
+        event.ondragend = () => {
+          draggedSchedule = null;
+          event.classList.remove("schedule-dragging");
+          calendar.querySelectorAll(".schedule-drop-target").forEach((element) => element.classList.remove("schedule-drop-target"));
+        };
+      });
+    });
+  }
+  document.addEventListener("keydown", (event) => {
+    const section = document.querySelector("#schedule-management");
+    if (!section || section.hidden || document.querySelector(".schedule-editor-modal") || event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement || event.target instanceof HTMLSelectElement) return;
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "c" && selectedCalendarSchedule) {
+      event.preventDefault();
+      scheduleClipboard = { ...selectedCalendarSchedule };
+      calendarNotice(`'${scheduleClipboard.title}' \uC77C\uC815\uC744 \uBCF5\uC0AC\uD588\uC2B5\uB2C8\uB2E4. \uBD99\uC5EC\uB123\uC744 \uB0A0\uC9DC\uB97C \uC120\uD0DD\uD558\uACE0 Ctrl+V\uB97C \uB204\uB974\uC138\uC694.`);
+    }
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "v" && scheduleClipboard && activeCalendarDate) {
+      event.preventDefault();
+      void pasteCalendarSchedule(activeCalendarDate);
+    }
+  });
+  function addScheduleInteractionHelp() {
+    const toolbar = document.querySelector("#schedule-management .calendar-toolbar");
+    if (!toolbar || toolbar.nextElementSibling?.classList.contains("schedule-interaction-help")) return;
+    toolbar.insertAdjacentHTML("afterend", '<p class="schedule-interaction-help">\uC77C\uC815\uC744 \uC6D0\uD558\uB294 \uB0A0\uC9DC\uB85C \uB04C\uC5B4 \uC774\uB3D9\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4. \uC77C\uC815 \uC120\uD0DD \u2192 Ctrl+C \u2192 \uB300\uC0C1 \uB0A0\uC9DC \uC704\uC5D0 \uB9C8\uC6B0\uC2A4 \u2192 Ctrl+V\uB85C \uBCF5\uC0AC\uD569\uB2C8\uB2E4.</p>');
+  }
   new MutationObserver(() => {
     mountSchedule();
     enhanceLiturgicalImport();
@@ -262,6 +367,8 @@
     enhanceScheduleEdits();
     enhanceScheduleAttachments();
     decorateCalendarTypes();
+    enableScheduleCalendarInteractions();
+    addScheduleInteractionHelp();
   }).observe(document.body, { childList: true, subtree: true });
   queueMicrotask(mountSchedule);
   document.head.insertAdjacentHTML("beforeend", "<style>.calendar-header{display:flex;align-items:center;justify-content:space-between}.calendar-toolbar{display:flex;align-items:center;justify-content:center;gap:20px;padding:18px}.calendar-toolbar h3{min-width:150px;margin:0;text-align:center}.calendar-toolbar button{width:38px;height:38px;border:1px solid var(--line);border-radius:50%;background:#fff;color:var(--blue);font-size:25px;cursor:pointer}.parish-calendar{overflow:hidden;border:1px solid var(--line);border-radius:12px}.calendar-week,.calendar-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr))}.calendar-week{background:#f5f8fb}.calendar-week b{padding:11px;text-align:center}.calendar-week b:first-child{color:#d54a55}.calendar-week b:last-child{color:#4072c9}.calendar-day{min-height:118px;padding:8px;border:0;border-top:1px solid var(--line);border-right:1px solid var(--line);background:#fff;text-align:left;cursor:pointer}.calendar-day:nth-child(7n){border-right:0}.calendar-day:hover{background:#f5fbf8}.calendar-day.outside{background:#fafbfc;color:#aab2bf}.calendar-day.today>span{display:grid;width:25px;height:25px;place-items:center;border-radius:50%;background:var(--blue);color:#fff}.calendar-day>div{display:grid;gap:3px;margin-top:6px}.calendar-day em{display:block;overflow:hidden;padding:4px 5px;border-radius:5px;background:#eaf4ff;color:#315b91;font-size:8px;font-style:normal;text-overflow:ellipsis;white-space:nowrap}.calendar-day em i{margin-right:4px;font-style:normal;font-weight:800}.calendar-day em.mass{background:#e8f7f1;color:#16775b}.calendar-day em.sacrament{background:#fff3df;color:#9c6a13}.calendar-day em.meeting{background:#f0edff;color:#654ea3}.calendar-day small{color:var(--muted);font-size:8px}.schedule-editor-modal .priest-modal-box{display:flex;width:min(94vw,820px);max-height:90vh;flex-direction:column;overflow:hidden}.schedule-editor-body{display:grid;min-height:0;grid-template-columns:1fr 1fr;gap:18px;padding:22px;overflow-y:auto}.selected-date-schedules h3{margin-top:0}.selected-date-schedules h3 span{color:var(--green);font-size:10px}.selected-date-schedules article{margin-top:8px;padding:11px;border-left:3px solid var(--green);border-radius:7px;background:#f7faf9}.selected-date-schedules article>b,.selected-date-schedules article>strong{display:block}.selected-date-schedules article>strong{margin-top:5px}.selected-date-schedules article p{white-space:pre-wrap}.schedule-editor-body form{display:grid;gap:10px;padding:15px;border-radius:10px;background:#f6f9f8}.schedule-editor-body form label{font-size:11px;font-weight:700}.schedule-editor-body input,.schedule-editor-body select,.schedule-editor-body textarea{display:block;width:100%;margin-top:5px;padding:10px;border:1px solid var(--line);border-radius:8px;background:#fff}.schedule-time{display:grid;grid-template-columns:1fr auto 1fr;align-items:end;gap:7px}.schedule-time span{padding-bottom:11px}.schedule-form-error{margin:0;color:#d94350}.schedule-editor-body form>button{justify-self:center}@media(max-width:760px){.calendar-day{min-height:88px;padding:5px}.calendar-day em i{display:none}.schedule-editor-body{grid-template-columns:1fr}.calendar-week b{padding:8px}}</style>");
@@ -275,6 +382,8 @@
   document.head.insertAdjacentHTML("beforeend", "<style>.calendar-header-actions{display:flex;align-items:center;gap:7px}.liturgical-import-button{height:40px;padding:0 13px;white-space:nowrap}@media(max-width:650px){.calendar-header{align-items:flex-start!important}.calendar-header-actions{flex-direction:column;align-items:stretch}}</style>");
   document.head.insertAdjacentHTML("beforeend", "<style>.selected-date-schedules article.mass{border-left-color:#16775b;background:#e8f7f1}.selected-date-schedules article.mass>b{color:#16775b}.selected-date-schedules article.sacrament{border-left-color:#c58a22;background:#fff3df}.selected-date-schedules article.sacrament>b{color:#9c6a13}.selected-date-schedules article.liturgical{border-left-color:#8062b5;background:#f3edff}.selected-date-schedules article.liturgical>b{color:#684ca0}.selected-date-schedules article.other{border-left-color:#627ba4;background:#edf2fa}.selected-date-schedules article.other>b{color:#486489}</style>");
   document.head.insertAdjacentHTML("beforeend", "<style>.schedule-attachment-field small{display:block;margin-top:4px;color:var(--muted);font-size:9px}.schedule-attachment-link{display:block;margin-top:7px;color:var(--blue);font-size:10px;font-weight:700;text-decoration:none}.schedule-attachment-link:hover{text-decoration:underline}</style>");
+  document.head.insertAdjacentHTML("beforeend", '<style>.calendar-day em[draggable="true"]{cursor:grab;user-select:none}.calendar-day em[draggable="true"]:active{cursor:grabbing}.calendar-day em.schedule-selected{outline:2px solid var(--blue);outline-offset:1px}.calendar-day em.schedule-dragging{opacity:.45}.calendar-day.schedule-drop-target{position:relative;background:#e8f4ff!important;box-shadow:inset 0 0 0 2px var(--blue)}.calendar-day.schedule-drop-target:after{position:absolute;inset:auto 5px 5px;padding:3px;border-radius:5px;background:var(--blue);color:#fff;content:"\uC774 \uB0A0\uC9DC\uB85C \uC774\uB3D9";font-size:8px;font-weight:800;text-align:center;pointer-events:none}</style>');
+  document.head.insertAdjacentHTML("beforeend", "<style>.schedule-interaction-help{margin:-5px 18px 12px;padding:8px 11px;border-radius:7px;background:#f1f6fd;color:#5d6f87;font-size:9px;line-height:1.5;text-align:center}</style>");
 
   // src/client/parish-notices.ts
   var panel = document.querySelector("#notice-management");
@@ -351,10 +460,10 @@
   }
   async function fileUpload(file) {
     if (file.size > 5 * 1024 * 1024) throw new Error(`${file.name}: \uD30C\uC77C\uB2F9 \uCD5C\uB300 \uC6A9\uB7C9\uC740 5MB\uC785\uB2C8\uB2E4.`);
-    const data = await new Promise((resolve, reject) => {
+    const data = await new Promise((resolve, reject2) => {
       const reader = new FileReader();
       reader.onload = () => resolve(String(reader.result).split(",")[1] ?? "");
-      reader.onerror = () => reject(reader.error);
+      reader.onerror = () => reject2(reader.error);
       reader.readAsDataURL(file);
     });
     return { name: file.name, type: file.type || "application/octet-stream", data };
@@ -642,6 +751,14 @@
   function readMeetingFields(root) {
     return JSON.stringify([...root.querySelectorAll("[data-meeting-day]")].filter((row) => row.querySelector('input[type="checkbox"]').checked).map((row) => ({ day: row.dataset.meetingDay, from: row.querySelector(".meeting-from").value, to: row.querySelector(".meeting-to").value })));
   }
+  function formatMeeting(raw) {
+    if (!raw) return "-";
+    try {
+      return JSON.parse(raw).map((item) => `${meetingDays.find((day) => day.key === item.day)?.label ?? item.day} ${item.from}~${item.to}`).join(", ") || "-";
+    } catch {
+      return raw;
+    }
+  }
   async function loadGroups() {
     try {
       const response = await fetch("/api/parish/groups"), groups = await response.json();
@@ -684,10 +801,10 @@
   async function imageData(file) {
     if (!file) return { iconType: "", iconData: "" };
     if (file.size > 2 * 1024 * 1024) throw new Error("\uC544\uC774\uCF58 \uC774\uBBF8\uC9C0\uB294 2MB\uAE4C\uC9C0 \uC5C5\uB85C\uB4DC\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4.");
-    return await new Promise((resolve, reject) => {
+    return await new Promise((resolve, reject2) => {
       const reader = new FileReader();
       reader.onload = () => resolve({ iconType: file.type, iconData: String(reader.result).split(",")[1] ?? "" });
-      reader.onerror = () => reject(reader.error);
+      reader.onerror = () => reject2(reader.error);
       reader.readAsDataURL(file);
     });
   }
@@ -913,6 +1030,230 @@
       notice2(error.message);
     }
   }
+  function openGroupManagement(group) {
+    document.querySelector("#parish-group-management-modal")?.remove();
+    document.body.insertAdjacentHTML("beforeend", `<div id="parish-group-management-modal" class="priest-modal"><div class="priest-modal-backdrop" data-group-manage-close></div><section class="priest-modal-box group-management-box"><header><div><p>GROUP MANAGEMENT</p><h2>\uBAA8\uC784 \uAD00\uB9AC</h2><small>${escapeHtml2(group.operatorName)} \uC6B4\uC601</small></div><button type="button" data-group-manage-close>\xD7</button></header><form id="parish-group-management-form"><div class="group-management-body"><label>\uC544\uC774\uCF58 \uC774\uBBF8\uC9C0<input name="icon" type="file" accept="image/*"></label><label>* \uBAA8\uC784\uBA85(\uAD6D\uBB38)<input name="nameKo" maxlength="200" required value="${escapeHtml2(group.nameKo)}"></label><label>\uBAA8\uC784\uBA85(\uC601\uBB38)<input name="nameEn" maxlength="300" value="${escapeHtml2(group.nameEn ?? "")}"></label><label>\uC6B4\uC601\uC790<input value="${escapeHtml2(group.operatorName)}" readonly></label><label>\uC0C1\uD0DC<select name="status">${Object.entries(groupStatus).map(([key, label]) => `<option value="${key}" ${group.status === key ? "selected" : ""}>${label}</option>`).join("")}</select></label><div class="full group-management-meeting"><strong>\uC815\uAE30\uBBF8\uD305</strong>${meetingFields()}</div><label class="full">\uBAA8\uC784\uC124\uBA85<textarea name="description" rows="5">${escapeHtml2(group.description ?? "")}</textarea></label><p class="full"></p><div class="full group-management-links"><button type="button" data-group-manage-members>\uD68C\uC6D0 ${group.memberCount}\uBA85</button><button type="button" data-group-manage-applications>\uAC00\uC785\uC2E0\uCCAD ${group.applicationCount}\uBA85</button><button type="button" data-group-manage-withdrawals>\uD0C8\uD1F4\uC694\uCCAD ${group.withdrawalCount}\uBA85</button></div></div><footer><button class="secondary" data-group-manage-close type="button">\uCDE8\uC18C</button><button class="primary" type="submit">\uC800\uC7A5</button></footer></form></section></div>`);
+    document.body.classList.add("modal-open");
+    const modal3 = document.querySelector("#parish-group-management-modal"), form3 = modal3.querySelector("form"), close2 = () => {
+      modal3.remove();
+      document.body.classList.remove("modal-open");
+    };
+    modal3.querySelectorAll("[data-group-manage-close]").forEach((button) => button.addEventListener("click", close2));
+    bindMeetingFields(modal3);
+    try {
+      const values = JSON.parse(group.regularMeeting ?? "[]");
+      values.forEach((value2) => {
+        const row = modal3.querySelector(`[data-meeting-day="${value2.day}"]`);
+        if (!row) return;
+        const check = row.querySelector('input[type="checkbox"]');
+        check.checked = true;
+        row.querySelectorAll('input[type="time"]').forEach((input, index) => {
+          input.disabled = false;
+          input.value = index === 0 ? value2.from : value2.to;
+        });
+      });
+    } catch {
+    }
+    modal3.querySelector("[data-group-manage-members]").onclick = () => {
+      close2();
+      void openGroupMembers(group);
+    };
+    modal3.querySelector("[data-group-manage-applications]").onclick = () => {
+      close2();
+      void openGroupApplications(group);
+    };
+    modal3.querySelector("[data-group-manage-withdrawals]").onclick = () => {
+      close2();
+      void openParishGroupWithdrawals(group);
+    };
+    form3.onsubmit = async (event) => {
+      event.preventDefault();
+      const submit = form3.querySelector('button[type="submit"]'), error = form3.querySelector(".group-management-body>p"), file = form3.elements.namedItem("icon").files?.[0];
+      submit.disabled = true;
+      error.textContent = "";
+      try {
+        const icon = await imageData(file ?? null), response = await fetch(`/api/parish/groups/${group.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...icon, nameKo: form3.elements.namedItem("nameKo").value, nameEn: form3.elements.namedItem("nameEn").value, status: form3.elements.namedItem("status").value, description: form3.elements.namedItem("description").value, regularMeeting: readMeetingFields(form3) }) }), result = await response.json();
+        if (!response.ok) throw new Error(result.errors ? Object.values(result.errors)[0] : result.message);
+        close2();
+        notice2(result.message);
+        await loadGroups();
+      } catch (reason) {
+        error.textContent = reason.message;
+        submit.disabled = false;
+      }
+    };
+  }
+  var decoratingGroupManagementRows = false;
+  async function decorateGroupManagementRows() {
+    const table = document.querySelector("#parish-group-grid .group-grid");
+    if (!table || decoratingGroupManagementRows || table.dataset.managementReady) return;
+    decoratingGroupManagementRows = true;
+    try {
+      const response = await fetch("/api/parish/groups"), groups = await response.json();
+      if (!response.ok) return;
+      table.dataset.managementReady = "true";
+      [...table.tBodies[0].rows].forEach((row, index) => {
+        const group = groups[index];
+        if (!group) return;
+        row.classList.add("group-management-row");
+        row.tabIndex = 0;
+        const open2 = (event) => {
+          if (event.target.closest("button,select,a,input")) return;
+          openGroupManagement(group);
+        };
+        row.onclick = open2;
+        row.onkeydown = (event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            open2(event);
+          }
+        };
+      });
+    } finally {
+      decoratingGroupManagementRows = false;
+    }
+  }
+  new MutationObserver(() => void decorateGroupManagementRows()).observe(document.querySelector("#parish-group-grid"), { childList: true, subtree: true });
+  async function openAdminGroupContents(group, type) {
+    document.querySelector("#admin-group-content-modal")?.remove();
+    const label = type === "notice" ? "\uACF5\uC9C0\uC0AC\uD56D" : "\uAC8C\uC2DC\uD310";
+    document.body.insertAdjacentHTML("beforeend", `<div id="admin-group-content-modal" class="priest-modal"><div class="priest-modal-backdrop" data-admin-content-close></div><section class="priest-modal-box admin-group-content-box"><header><div><p>GROUP CONTENT</p><h2>${escapeHtml2(group.nameKo)} \xB7 ${label} \uAD00\uB9AC</h2></div><button type="button" data-admin-content-close>\xD7</button></header><div class="admin-group-content-body"><form><input name="contentId" type="hidden"><label>* \uC81C\uBAA9<input name="title" maxlength="200" required placeholder="\uC81C\uBAA9\uC744 \uC785\uB825\uD574 \uC8FC\uC138\uC694"></label><label>* \uB0B4\uC6A9<textarea name="content" maxlength="20000" rows="5" required placeholder="\uB0B4\uC6A9\uC744 \uC785\uB825\uD574 \uC8FC\uC138\uC694"></textarea></label><p></p><div><button class="secondary" data-admin-content-reset type="button">\uC0C8 \uAE00</button><button class="primary" type="submit">\uB4F1\uB85D</button></div></form><section><h3>\uB4F1\uB85D \uBAA9\uB85D</h3><div class="admin-group-content-list">\uBD88\uB7EC\uC624\uB294 \uC911...</div></section></div><footer><button class="secondary" data-admin-content-close type="button">\uB2EB\uAE30</button></footer></section></div>`);
+    document.body.classList.add("modal-open");
+    const modal3 = document.querySelector("#admin-group-content-modal"), form3 = modal3.querySelector("form"), list = modal3.querySelector(".admin-group-content-list"), close2 = () => {
+      modal3.remove();
+      document.body.classList.remove("modal-open");
+    }, reset = () => {
+      form3.reset();
+      form3.elements.namedItem("contentId").value = "";
+      form3.querySelector('button[type="submit"]').textContent = "\uB4F1\uB85D";
+      form3.querySelector("p").textContent = "";
+    };
+    modal3.querySelectorAll("[data-admin-content-close]").forEach((button) => button.addEventListener("click", close2));
+    modal3.querySelector("[data-admin-content-reset]").onclick = reset;
+    const load5 = async () => {
+      const response = await fetch(`/api/parish/groups/${group.id}/contents?type=${type}`), data = await response.json();
+      if (!response.ok) throw new Error(data.message);
+      list.innerHTML = data.items.length ? data.items.map((item) => `<article><header><div><strong>${escapeHtml2(item.title)}</strong><small>${escapeHtml2(item.authorName)} \xB7 ${new Date(item.createdAt).toLocaleString("ko-KR")}</small></div><div><button data-content-edit="${item.id}" type="button">\uC218\uC815</button><button data-content-delete="${item.id}" type="button">\uC0AD\uC81C</button></div></header><p>${escapeHtml2(item.content)}</p></article>`).join("") : `<div class="group-members-empty">\uB4F1\uB85D\uB41C ${label}\uC774 \uC5C6\uC2B5\uB2C8\uB2E4.</div>`;
+      list.querySelectorAll("[data-content-edit]").forEach((button) => button.onclick = () => {
+        const item = data.items.find((value2) => value2.id === Number(button.dataset.contentEdit));
+        if (!item) return;
+        form3.elements.namedItem("contentId").value = String(item.id);
+        form3.elements.namedItem("title").value = item.title;
+        form3.elements.namedItem("content").value = item.content;
+        form3.querySelector('button[type="submit"]').textContent = "\uC218\uC815 \uC800\uC7A5";
+        form3.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+      list.querySelectorAll("[data-content-delete]").forEach((button) => button.onclick = async () => {
+        if (!window.confirm("\uC774 \uAC8C\uC2DC\uBB3C\uC744 \uC0AD\uC81C\uD558\uC2DC\uACA0\uC2B5\uB2C8\uAE4C?")) return;
+        const response2 = await fetch(`/api/parish/groups/${group.id}/contents/${button.dataset.contentDelete}`, { method: "DELETE" }), result = await response2.json();
+        if (!response2.ok) throw new Error(result.message);
+        reset();
+        await load5();
+      });
+    };
+    form3.onsubmit = async (event) => {
+      event.preventDefault();
+      const id = form3.elements.namedItem("contentId").value, title = form3.elements.namedItem("title").value, content = form3.elements.namedItem("content").value, submit = form3.querySelector('button[type="submit"]'), error = form3.querySelector("p");
+      submit.disabled = true;
+      error.textContent = "";
+      try {
+        const response = await fetch(id ? `/api/parish/groups/${group.id}/contents/${id}` : `/api/parish/groups/${group.id}/contents`, { method: id ? "PATCH" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type, title, content }) }), result = await response.json();
+        if (!response.ok) throw new Error(result.message);
+        reset();
+        await load5();
+      } catch (reason) {
+        error.textContent = reason.message;
+      } finally {
+        submit.disabled = false;
+      }
+    };
+    void load5().catch((error) => list.textContent = error.message);
+  }
+  var decoratingGroupContentColumns = false;
+  async function decorateGroupContentColumns() {
+    const table = document.querySelector("#parish-group-grid .group-grid");
+    if (!table || table.dataset.contentColumnsReady || decoratingGroupContentColumns) return;
+    decoratingGroupContentColumns = true;
+    try {
+      const response = await fetch("/api/parish/groups"), groups = await response.json();
+      if (!response.ok) return;
+      table.dataset.contentColumnsReady = "true";
+      ["\uACF5\uC9C0\uC0AC\uD56D", "\uAC8C\uC2DC\uD310"].forEach((label) => {
+        const th = document.createElement("th");
+        th.textContent = label;
+        table.tHead.rows[0].append(th);
+      });
+      [...table.tBodies[0].rows].forEach((row, index) => {
+        const group = groups[index];
+        if (!group) return;
+        ["notice", "board"].forEach((type) => {
+          const cell = row.insertCell(), button = document.createElement("button");
+          button.type = "button";
+          button.className = "group-content-manage-button";
+          button.textContent = "\uAD00\uB9AC";
+          button.onclick = (event) => {
+            event.stopPropagation();
+            void openAdminGroupContents(group, type);
+          };
+          cell.append(button);
+        });
+      });
+    } finally {
+      decoratingGroupContentColumns = false;
+    }
+  }
+  new MutationObserver(() => void decorateGroupContentColumns()).observe(document.querySelector("#parish-group-grid"), { childList: true, subtree: true });
+  function applyGroupSearch() {
+    const view = document.querySelector("#member-groups-view"), operatorQuery = view?.querySelector("#parish-group-operator-query")?.value.trim().toLocaleLowerCase("ko-KR") ?? "", nameQuery = view?.querySelector("#parish-group-name-query")?.value.trim().toLocaleLowerCase("ko-KR") ?? "", table = view?.querySelector("#parish-group-grid .group-grid"), operatorIndex = table ? [...table.tHead.rows[0].cells].findIndex((cell) => cell.textContent?.trim() === "\uC6B4\uC601\uC790") : -1, rows = [...table?.tBodies[0]?.rows ?? []];
+    rows.forEach((row) => {
+      const name = [row.cells[1]?.textContent, row.cells[2]?.textContent].join(" ").toLocaleLowerCase("ko-KR"), operator = operatorIndex >= 0 ? row.cells[operatorIndex]?.textContent?.toLocaleLowerCase("ko-KR") ?? "" : "", hidden = Boolean(operatorQuery) && !operator.includes(operatorQuery) || Boolean(nameQuery) && !name.includes(nameQuery);
+      if (row.hidden !== hidden) row.hidden = hidden;
+    });
+    const visible = rows.filter((row) => !row.hidden).length, count = document.querySelector("#parish-group-count"), text = `\uCD1D ${visible}\uAC1C`;
+    if (rows.length && count?.textContent !== text) count.textContent = text;
+  }
+  function formatGroupMeetingCells() {
+    document.querySelectorAll("#parish-group-grid .group-grid tbody tr td:nth-child(5):not([data-meeting-formatted])").forEach((cell) => {
+      cell.dataset.meetingFormatted = "true";
+      cell.textContent = formatMeeting(cell.textContent);
+    });
+  }
+  new MutationObserver(formatGroupMeetingCells).observe(document.querySelector("#parish-group-grid"), { childList: true, subtree: true });
+  function mountGroupSearch() {
+    const view = document.querySelector("#member-groups-view"), header = view?.querySelector(":scope>header");
+    if (!view || !header) return;
+    view.querySelectorAll(".grid-reload-toolbar,.grid-reload-button").forEach((element) => element.remove());
+    header.classList.add("group-management-header");
+    if (view.querySelector("#parish-group-search")) return;
+    header.insertAdjacentHTML("afterend", '<div id="parish-group-search" class="parish-group-search"><input id="parish-group-operator-query" type="search" placeholder="\uC6B4\uC601\uC790" aria-label="\uC6B4\uC601\uC790 \uC870\uD68C"><input id="parish-group-name-query" type="search" placeholder="\uBAA8\uC784\uBA85" aria-label="\uBAA8\uC784\uBA85 \uC870\uD68C"><button id="parish-group-query" type="button">\uC870\uD68C</button><button id="parish-group-reset" type="button">\uCD08\uAE30\uD654</button></div>');
+    const query = () => applyGroupSearch();
+    view.querySelector("#parish-group-query").onclick = query;
+    view.querySelectorAll("#parish-group-operator-query,#parish-group-name-query").forEach((input) => input.onkeydown = (event) => {
+      if (event.key === "Enter") query();
+    });
+    view.querySelector("#parish-group-reset").onclick = () => {
+      view.querySelectorAll("#parish-group-operator-query,#parish-group-name-query").forEach((input) => input.value = "");
+      applyGroupSearch();
+    };
+  }
+  var groupViewObserver = new MutationObserver(() => {
+    mountGroupSearch();
+    applyGroupSearch();
+  });
+  groupViewObserver.observe(document.querySelector("#member-groups-view"), { childList: true, subtree: true });
+  mountGroupSearch();
+  function applyParishGroupTerminology(root = document.body) {
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    let node;
+    while (node = walker.nextNode()) {
+      const parent = node.parentElement;
+      if (!parent || parent.matches("script,style")) continue;
+      const current = node.textContent ?? "";
+      if (current.includes("\uB2E8\uCCB4")) node.textContent = current.replaceAll("\uB2E8\uCCB4", "\uBAA8\uC784");
+    }
+  }
+  new MutationObserver((records) => records.forEach((record) => record.addedNodes.forEach((node) => applyParishGroupTerminology(node)))).observe(document.body, { childList: true, subtree: true });
+  queueMicrotask(() => applyParishGroupTerminology());
 
   // src/client/parish-missions.ts
   function confirmAdminMissionAnswer() {
@@ -993,6 +1334,7 @@
     });
   }, true);
   var labels = { requested: "\uC2B9\uC778\uC2E0\uCCAD", approved: "\uC2B9\uC778", rejected: "\uBC18\uB824" };
+  labels.ended = "\uC885\uB8CC";
   function esc(value2) {
     const div = document.createElement("div");
     div.textContent = value2;
@@ -1018,7 +1360,17 @@
     const count = document.querySelector("#mission-admin-count");
     missionHeader.append(actions);
     actions.append(count);
-    actions.insertAdjacentHTML("beforeend", '<button id="mission-admin-reload" class="grid-reload-button" type="button"><span aria-hidden="true">\u21BB</span> Reload</button>');
+    actions.insertAdjacentHTML("beforeend", '<div class="mission-admin-search"><input id="mission-admin-author-filter" type="search" placeholder="\uC791\uC131\uC790" aria-label="\uC791\uC131\uC790 \uC870\uD68C"><input id="mission-admin-title-filter" type="search" placeholder="\uC81C\uBAA9" aria-label="\uC81C\uBAA9 \uC870\uD68C"><select id="mission-admin-status-filter" aria-label="\uBBF8\uC158 \uC0C1\uD0DC \uC870\uD68C"><option value="all">\uC804\uCCB4 \uC0C1\uD0DC</option><option value="approved">\uC2B9\uC778</option><option value="rejected">\uBC18\uB824</option><option value="ended">\uC885\uB8CC</option><option value="requested">\uC2B9\uC778\uB300\uAE30</option></select><button id="mission-admin-query" class="primary" type="button">\uC870\uD68C</button><button id="mission-admin-reset" class="secondary" type="button">\uCD08\uAE30\uD654</button></div><button id="mission-admin-reload" class="grid-reload-button" type="button"><span aria-hidden="true">\u21BB</span> Reload</button>');
+    const query = () => applyMissionStatusFilter();
+    document.querySelector("#mission-admin-query").onclick = query;
+    document.querySelectorAll("#mission-admin-author-filter,#mission-admin-title-filter").forEach((input) => input.onkeydown = (event) => {
+      if (event.key === "Enter") query();
+    });
+    document.querySelector("#mission-admin-reset").onclick = () => {
+      document.querySelectorAll("#mission-admin-author-filter,#mission-admin-title-filter").forEach((input) => input.value = "");
+      document.querySelector("#mission-admin-status-filter").value = "all";
+      applyMissionStatusFilter();
+    };
     document.querySelector("#mission-admin-reload").onclick = async (event) => {
       const button = event.currentTarget;
       button.disabled = true;
@@ -1032,6 +1384,16 @@
         }, 350);
       }
     };
+  }
+  function applyMissionStatusFilter() {
+    const value2 = document.querySelector("#mission-admin-status-filter")?.value ?? "all", authorQuery = document.querySelector("#mission-admin-author-filter")?.value.trim().toLocaleLowerCase("ko-KR") ?? "", titleQuery = document.querySelector("#mission-admin-title-filter")?.value.trim().toLocaleLowerCase("ko-KR") ?? "", cards = [...document.querySelectorAll("#mission-admin-list .mission-admin-card")];
+    cards.forEach((card) => {
+      const badge = card.querySelector(".mission-status"), status = badge?.classList.contains("requested") ? "requested" : badge?.classList.contains("approved") ? "approved" : badge?.classList.contains("rejected") ? "rejected" : badge?.classList.contains("ended") ? "ended" : "", title = card.querySelector("header strong")?.textContent?.toLocaleLowerCase("ko-KR") ?? "", author = card.querySelector("dl dd")?.textContent?.toLocaleLowerCase("ko-KR") ?? "", hidden = value2 !== "all" && status !== value2 || Boolean(authorQuery) && !author.includes(authorQuery) || Boolean(titleQuery) && !title.includes(titleQuery);
+      if (card.hidden !== hidden) card.hidden = hidden;
+    });
+    const visibleCards = cards.filter((card) => !card.hidden), visible = visibleCards.length, empty = document.querySelector("#mission-admin-empty");
+    document.querySelector("#mission-admin-count").textContent = `\uC870\uD68C ${visible}\uAC1C \xB7 \uC2B9\uC778\uB300\uAE30 ${visibleCards.filter((card) => card.querySelector(".mission-status.requested")).length}\uAC1C`;
+    if (empty.hidden !== visible > 0) empty.hidden = visible > 0;
   }
   new MutationObserver(() => {
     document.querySelectorAll(".mission-applicant-count").forEach((applicants) => {
@@ -1151,6 +1513,98 @@
       document.querySelector("#mission-admin-questions").textContent = error.message;
     }
   }
+  var loadingMissionEditRequests = false;
+  async function decorateMissionEditRequests() {
+    const list = document.querySelector("#mission-admin-list");
+    if (!list || loadingMissionEditRequests || list.querySelector(".mission-edit-request-card")) return;
+    loadingMissionEditRequests = true;
+    try {
+      const items4 = await api2("/api/parish/mission-edit-requests");
+      items4.reverse().forEach((item) => list.insertAdjacentHTML("afterbegin", `<article class="mission-admin-card mission-edit-request-card"><header><div><b class="mission-status requested">\uC218\uC815 \uC2B9\uC778 \uB300\uAE30</b><strong>${esc(item.title)}</strong></div><time>${new Date(item.requestedAt).toLocaleString("ko-KR")}</time></header><dl><dt>\uC791\uC131\uC790</dt><dd>${esc(item.authorName)}${item.baptismalName ? ` (${esc(item.baptismalName)})` : ""}</dd><dt>\uC218\uC815 \uB0B4\uC6A9</dt><dd>${esc(item.content)}</dd><dt>\uBAA8\uC9D1\uAE30\uAC04</dt><dd>${item.applicationFrom} ~ ${item.applicationTo}</dd><dt>\uD0DC\uADF8</dt><dd class="mission-tags">${item.tags.map((tag) => `<span>#${esc(tag)}</span>`).join("") || "-"}</dd></dl><footer><button class="secondary" data-edit-reject="${item.id}" type="button">\uBC18\uB824</button><button class="primary" data-edit-approve="${item.id}" type="button">\uC2B9\uC778 \uBC0F \uBC18\uC601</button></footer></article>`));
+      list.querySelectorAll("[data-edit-approve]").forEach((button) => button.onclick = () => decideMissionEdit(Number(button.dataset.editApprove), "approved"));
+      list.querySelectorAll("[data-edit-reject]").forEach((button) => button.onclick = async () => {
+        const reason = await promptAdminApplicationRejection();
+        if (reason !== null) await decideMissionEdit(Number(button.dataset.editReject), "rejected", reason);
+      });
+    } finally {
+      loadingMissionEditRequests = false;
+    }
+  }
+  async function decideMissionEdit(id, status, rejectionReason = "") {
+    const result = await api2(`/api/parish/mission-edit-requests/${id}/decision`, { method: "PATCH", body: JSON.stringify({ status, rejectionReason }) });
+    await load3();
+    window.dispatchEvent(new CustomEvent("parish:notice", { detail: result.message }));
+  }
+  var missionListForFilter = document.querySelector("#mission-admin-list");
+  var missionListRefreshQueued = false;
+  new MutationObserver(() => {
+    if (missionListRefreshQueued) return;
+    missionListRefreshQueued = true;
+    queueMicrotask(() => {
+      missionListRefreshQueued = false;
+      void decorateMissionEditRequests();
+      applyMissionStatusFilter();
+    });
+  }).observe(missionListForFilter, { childList: true });
+  queueMicrotask(() => void decorateMissionEditRequests());
+
+  // src/client/parish-catacomb-admin.ts
+  var esc2 = (value2) => String(value2 ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
+  var posts = [];
+  var filter = "requested";
+  async function api3(url, options) {
+    const response = await fetch(url, { ...options, headers: { "Content-Type": "application/json", ...options?.headers ?? {} } }), data = await response.json();
+    if (!response.ok) throw new Error(data.message ?? "\uC694\uCCAD\uC744 \uCC98\uB9AC\uD558\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4.");
+    return data;
+  }
+  function mount() {
+    const panel3 = document.querySelector('[data-sharing-panel="catacomb"]');
+    if (!panel3 || panel3.dataset.adminReady) return;
+    panel3.dataset.adminReady = "true";
+    panel3.innerHTML = '<header><div><h2>\uCE74\uD0C0\uCF64 \uAD00\uB9AC</h2><p>\uC2E0\uB3C4\uAC00 \uC694\uCCAD\uD55C \uCE74\uD0C0\uCF64\uC744 \uAC80\uD1A0\uD558\uACE0 \uB4F1\uB85D\uB41C \uCE74\uD0C0\uCF64\uC744 \uD655\uC778\uD569\uB2C8\uB2E4.</p></div><span id="catacomb-admin-count"></span></header><nav class="catacomb-admin-tabs"><button class="active" data-catacomb-status="requested" type="button">\uB4F1\uB85D \uC694\uCCAD</button><button data-catacomb-status="approved" type="button">\uB4F1\uB85D \uC644\uB8CC</button></nav><div id="catacomb-admin-list"></div><div id="catacomb-admin-empty" class="sharing-empty" hidden><strong>\uD45C\uC2DC\uD560 \uCE74\uD0C0\uCF64\uC774 \uC5C6\uC2B5\uB2C8\uB2E4.</strong></div>';
+    panel3.querySelectorAll("[data-catacomb-status]").forEach((button) => button.onclick = () => {
+      filter = button.dataset.catacombStatus;
+      panel3.querySelectorAll("[data-catacomb-status]").forEach((tab) => tab.classList.toggle("active", tab === button));
+      render3();
+    });
+  }
+  function render3() {
+    const list = document.querySelector("#catacomb-admin-list"), empty = document.querySelector("#catacomb-admin-empty"), count = document.querySelector("#catacomb-admin-count");
+    if (!list || !empty || !count) return;
+    const items4 = posts.filter((item) => item.status === filter);
+    count.textContent = `\uB4F1\uB85D \uC694\uCCAD ${posts.filter((item) => item.status === "requested").length}\uAC1C \xB7 \uB4F1\uB85D \uC644\uB8CC ${posts.filter((item) => item.status === "approved").length}\uAC1C`;
+    list.innerHTML = items4.map((item) => `<article class="catacomb-admin-card"><header><div><b class="${item.status}">${item.status === "requested" ? "\uB4F1\uB85D \uC694\uCCAD" : "\uB4F1\uB85D \uC644\uB8CC"}</b><h3>${esc2(item.title)}</h3></div><time>${new Date(item.createdAt).toLocaleString("ko-KR")}</time></header><dl><dt>\uC791\uC131\uC790</dt><dd>${item.anonymous ? "\uC775\uBA85" : `${esc2(item.authorName)}${item.baptismalName ? ` (${esc2(item.baptismalName)})` : ""}`}</dd><dt>\uB0B4\uC6A9</dt><dd>${esc2(item.content)}</dd><dt>\uD0DC\uADF8</dt><dd>${item.tags.length ? item.tags.map((tag) => `<span>#${esc2(tag)}</span>`).join("") : "-"}</dd></dl>${item.status === "requested" ? `<footer><button class="secondary" data-catacomb-reject="${item.id}" type="button">\uBC18\uB824</button><button class="primary" data-catacomb-approve="${item.id}" type="button">\uC2B9\uC778</button></footer>` : ""}</article>`).join("");
+    empty.hidden = items4.length > 0;
+    list.querySelectorAll("[data-catacomb-approve]").forEach((button) => button.onclick = () => decide2(Number(button.dataset.catacombApprove), "approved"));
+    list.querySelectorAll("[data-catacomb-reject]").forEach((button) => button.onclick = () => reject(Number(button.dataset.catacombReject)));
+  }
+  async function load4() {
+    try {
+      posts = await api3("/api/parish/catacomb/posts");
+      render3();
+    } catch (error) {
+      window.dispatchEvent(new CustomEvent("parish:notice", { detail: error.message }));
+    }
+  }
+  async function decide2(id, status, rejectionReason = "") {
+    try {
+      const result = await api3(`/api/parish/catacomb/posts/${id}/decision`, { method: "PATCH", body: JSON.stringify({ status, rejectionReason }) });
+      await load4();
+      window.dispatchEvent(new CustomEvent("parish:notice", { detail: result.message }));
+    } catch (error) {
+      window.dispatchEvent(new CustomEvent("parish:notice", { detail: error.message }));
+    }
+  }
+  function reject(id) {
+    const reason = window.prompt("\uBC18\uB824 \uC0AC\uC720\uB97C \uC785\uB825\uD574 \uC8FC\uC138\uC694.")?.trim();
+    if (reason) void decide2(id, "rejected", reason);
+  }
+  document.querySelector('[data-sharing-view="catacomb"]')?.addEventListener("click", () => {
+    mount();
+    void load4();
+  });
+  mount();
+  document.head.insertAdjacentHTML("beforeend", "<style>.catacomb-admin-tabs{display:flex;gap:7px;margin:16px 0}.catacomb-admin-tabs button{height:36px;padding:0 18px;border:1px solid var(--line);border-radius:18px;background:#fff;font-weight:700}.catacomb-admin-tabs button.active{border-color:var(--green);background:#eaf8f2;color:var(--green)}#catacomb-admin-list{display:grid;gap:12px}.catacomb-admin-card{padding:18px;border:1px solid var(--line);border-radius:12px;background:#fff}.catacomb-admin-card>header{display:flex;justify-content:space-between}.catacomb-admin-card header div{display:flex;align-items:center;gap:9px}.catacomb-admin-card header b{padding:4px 8px;border-radius:10px;font-size:9px}.catacomb-admin-card header b.requested{background:#fff4d8;color:#9b7000}.catacomb-admin-card header b.approved{background:#eaf8f2;color:#16845f}.catacomb-admin-card h3{margin:0}.catacomb-admin-card time{color:var(--muted);font-size:9px}.catacomb-admin-card dl{display:grid;grid-template-columns:70px 1fr;gap:10px;margin:16px 0 0}.catacomb-admin-card dt{color:var(--muted);font-size:10px}.catacomb-admin-card dd{margin:0;line-height:1.65;white-space:pre-wrap}.catacomb-admin-card dd span{display:inline-block;margin-right:5px;padding:3px 7px;border-radius:10px;background:#eef8f4;color:var(--green)}.catacomb-admin-card footer{display:flex;justify-content:flex-end;gap:8px;margin-top:15px;padding-top:13px;border-top:1px solid var(--line)}.catacomb-admin-card footer button{height:36px;padding:0 18px}@media(max-width:700px){.catacomb-admin-card>header{display:block}.catacomb-admin-card time{display:block;margin-top:7px}.catacomb-admin-card dl{grid-template-columns:55px 1fr}}</style>");
 
   // src/client/parish-shrines.ts
   var sharingMainTab = document.querySelector('[data-main-view="sharing"]');
@@ -1189,7 +1643,7 @@
   shrineCard.insertAdjacentHTML("afterend", '<section id="shrine-review-management" class="shrine-card shrine-review-management" hidden><header class="shrine-header"><div><h2>\uC21C\uB840\uD6C4\uAE30 \uAD00\uB9AC</h2><p>\uBCF8\uB2F9 \uC2E0\uB3C4\uAC00 \uB4F1\uB85D\uD55C \uC131\uC9C0\uC21C\uB840 \uD6C4\uAE30\uC640 \uC0AC\uC9C4\uC744 \uD655\uC778\uD558\uACE0 \uAD00\uB9AC\uD569\uB2C8\uB2E4.</p></div></header><div class="shrine-filters"><input id="shrine-review-query" type="search" placeholder="\uD6C4\uAE30 \uC81C\uBAA9, \uB0B4\uC6A9, \uC131\uC9C0\uBA85, \uC791\uC131\uC790 \uAC80\uC0C9"><button id="shrine-review-search" class="secondary" type="button">\uC870\uD68C</button><button id="shrine-review-reset" class="text-button" type="button">\uCD08\uAE30\uD654</button></div><div class="shrine-summary"><span id="shrine-review-count"></span></div><div id="shrine-review-list" class="shrine-review-list"></div><div id="shrine-review-empty" class="history-empty" hidden>\uB4F1\uB85D\uB41C \uC21C\uB840\uD6C4\uAE30\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4.</div></section>');
   var items3 = [];
   var sortState = null;
-  async function api3(url, options) {
+  async function api4(url, options) {
     const response = await fetch(url, { ...options, headers: { "Content-Type": "application/json", ...options?.headers ?? {} } });
     const data = await response.json();
     if (!response.ok) throw Object.assign(new Error(data.message ?? "\uC694\uCCAD\uC744 \uCC98\uB9AC\uD558\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4."), { errors: data.errors });
@@ -1269,17 +1723,17 @@
   async function loadShrines() {
     const diocese = document.querySelector("#shrine-diocese").value, q = document.querySelector("#shrine-query").value;
     try {
-      const result = await api3(`/api/parish/shrines?diocese=${encodeURIComponent(diocese)}&q=${encodeURIComponent(q)}`);
+      const result = await api4(`/api/parish/shrines?diocese=${encodeURIComponent(diocese)}&q=${encodeURIComponent(q)}`);
       items3 = result.items;
       const select = document.querySelector("#shrine-diocese"), current = select.value;
       select.replaceChildren(new Option("\uC804\uCCB4 \uAD50\uAD6C", ""), ...result.dioceses.map((item) => new Option(`${item.name} (${item.count})`, item.name)));
       select.value = current;
-      render3();
+      render4();
     } catch (error) {
       notice3(error.message);
     }
   }
-  function render3() {
+  function render4() {
     const list = document.querySelector("#shrine-list");
     list.innerHTML = `<div class="shrine-grid-wrap"><table class="shrine-grid"><thead><tr><th>\uAD50\uAD6C</th><th>\uC131\uC9C0\uBA85</th><th>\uC8FC\uC18C</th><th>\uC804\uD654\uBC88\uD638</th><th>\uD648\uD398\uC774\uC9C0</th><th>\uC21C\uB840\uC790(\uC218)</th><th>\uC0AC\uC6A9</th><th>\uAD00\uB9AC</th></tr></thead><tbody>${items3.map((item) => {
       const shortName = Array.from(item.name).slice(0, 20).join("") + (Array.from(item.name).length > 20 ? "\u2026" : "");
@@ -1309,7 +1763,7 @@
       const left = value2(a), right = value2(b), result = typeof left === "number" && typeof right === "number" ? left - right : String(left).localeCompare(String(right), "ko", { numeric: true });
       return sortState.direction === "asc" ? result : -result;
     });
-    render3();
+    render4();
     const active = document.querySelectorAll(".shrine-grid th")[index];
     active?.classList.add(sortState.direction === "asc" ? "sort-asc" : "sort-desc");
   });
@@ -1338,7 +1792,7 @@
     document.querySelector("#shrine-pilgrims-summary").textContent = "\uC21C\uB840\uC790 \uC815\uBCF4\uB97C \uBD88\uB7EC\uC624\uB294 \uC911\uC785\uB2C8\uB2E4.";
     document.querySelector("#shrine-pilgrims-content").innerHTML = '<div class="pilgrims-empty">\uBD88\uB7EC\uC624\uB294 \uC911...</div>';
     try {
-      const result = await api3(`/api/parish/shrines/${shrine.id}/pilgrims`);
+      const result = await api4(`/api/parish/shrines/${shrine.id}/pilgrims`);
       document.querySelector("#shrine-pilgrims-summary").textContent = `\uBC29\uBB38 \uC2E0\uB3C4 ${result.items.length.toLocaleString("ko-KR")}\uBA85`;
       document.querySelector("#shrine-pilgrims-content").innerHTML = result.items.length ? `<div class="pilgrims-table-wrap"><table class="pilgrims-table"><thead><tr><th>\uC2E0\uB3C4\uBA85</th><th>\uC138\uB840\uBA85</th><th>\uC5F0\uB77D\uCC98</th><th>\uC774\uBA54\uC77C</th><th>\uBC29\uBB38\uC77C\uC2DC</th></tr></thead><tbody>${result.items.map((item) => `<tr><td><strong>${escapeHtml3(item.name)}</strong></td><td>${escapeHtml3(item.baptismalName ?? "-")}</td><td>${escapeHtml3(item.mobile ?? "-")}</td><td>${escapeHtml3(item.email)}</td><td>${new Date(item.visitedAt).toLocaleString("ko-KR")}</td></tr>`).join("")}</tbody></table></div>` : '<div class="pilgrims-empty">\uC774 \uC131\uC9C0\uB97C \uBC29\uBB38\uD55C \uC2E0\uB3C4\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4.</div>';
     } catch (error) {
@@ -1378,7 +1832,7 @@
     event.preventDefault();
     const id = field("#shrine-id").value;
     try {
-      const result = await api3(id ? `/api/parish/shrines/${id}` : "/api/parish/shrines", { method: id ? "PATCH" : "POST", body: JSON.stringify(formPayload()) });
+      const result = await api4(id ? `/api/parish/shrines/${id}` : "/api/parish/shrines", { method: id ? "PATCH" : "POST", body: JSON.stringify(formPayload()) });
       closeEditor();
       await loadShrines();
       notice3(result.message);
@@ -1389,7 +1843,7 @@
   });
   async function saveShrine(item, change) {
     try {
-      const result = await api3(`/api/parish/shrines/${item.id}`, { method: "PATCH", body: JSON.stringify({ ...item, ...change }) });
+      const result = await api4(`/api/parish/shrines/${item.id}`, { method: "PATCH", body: JSON.stringify({ ...item, ...change }) });
       await loadShrines();
       notice3(result.message);
     } catch (error) {
@@ -1400,7 +1854,7 @@
   async function removeShrine(item) {
     if (!window.confirm(`'${item.name}' \uC815\uBCF4\uB97C \uC0AD\uC81C\uD558\uC2DC\uACA0\uC2B5\uB2C8\uAE4C?`)) return;
     try {
-      const result = await api3(`/api/parish/shrines/${item.id}`, { method: "DELETE" });
+      const result = await api4(`/api/parish/shrines/${item.id}`, { method: "DELETE" });
       await loadShrines();
       notice3(result.message);
     } catch (error) {
@@ -1411,7 +1865,7 @@
   async function loadShrineReviews() {
     const query = document.querySelector("#shrine-review-query").value.trim();
     try {
-      shrineReviews = await api3(`/api/parish/shrine-reviews?q=${encodeURIComponent(query)}`);
+      shrineReviews = await api4(`/api/parish/shrine-reviews?q=${encodeURIComponent(query)}`);
       renderShrineReviews();
     } catch (error) {
       notice3(error.message);
@@ -1457,7 +1911,7 @@
   }
   async function setReviewEnabled(item, enabled) {
     try {
-      const result = await api3(`/api/parish/shrine-reviews/${item.id}/status`, { method: "PATCH", body: JSON.stringify({ enabled }) });
+      const result = await api4(`/api/parish/shrine-reviews/${item.id}/status`, { method: "PATCH", body: JSON.stringify({ enabled }) });
       item.enabled = enabled;
       renderShrineReviews();
       notice3(result.message);

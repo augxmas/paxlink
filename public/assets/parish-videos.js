@@ -7,6 +7,13 @@
   var preview = document.querySelector("#video-metadata-preview");
   var errorBox = document.querySelector("#video-error");
   var pending = null;
+  preview.querySelector(":scope>div").insertAdjacentHTML("beforeend", '<label id="video-tags-field" class="video-tags-field" hidden>\uD0DC\uADF8 \uC815\uBCF4<input id="video-tags" maxlength="1000" placeholder="\uC27C\uD45C(,) \uB610\uB294 \uB744\uC5B4\uC4F0\uAE30\uB85C \uAD6C\uBD84"><small>\uB3D9\uC601\uC0C1\uACFC \uAD00\uB828\uB41C \uD0DC\uADF8\uB97C \uCD5C\uB300 20\uAC1C\uAE4C\uC9C0 \uC785\uB825\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4.</small><span id="video-tag-preview"></span></label>');
+  var tagsField = document.querySelector("#video-tags-field");
+  var tagsInput = document.querySelector("#video-tags");
+  tagsInput.addEventListener("input", () => {
+    const tags = [...new Set(tagsInput.value.split(/[,\s]+/).map((value) => value.replace(/^#/, "").trim()).filter(Boolean))].slice(0, 20);
+    document.querySelector("#video-tag-preview").innerHTML = tags.map((tag) => `<b>#${escapeHtml(tag)}</b>`).join("");
+  });
   async function api(url, options) {
     const response = await fetch(url, { ...options, headers: { "Content-Type": "application/json", ...options?.headers ?? {} } });
     const data = await response.json();
@@ -34,6 +41,7 @@
     event.preventDefault();
     errorBox.textContent = "";
     preview.hidden = true;
+    tagsField.hidden = true;
     pending = null;
     const button = document.querySelector("#video-check");
     button.disabled = true;
@@ -46,6 +54,8 @@
       const link = document.querySelector("#video-preview-link");
       link.href = pending.youtubeUrl;
       preview.hidden = false;
+      tagsField.hidden = false;
+      tagsInput.focus();
     } catch (error) {
       errorBox.textContent = error.message;
     } finally {
@@ -58,10 +68,13 @@
     const button = document.querySelector("#video-register");
     button.disabled = true;
     try {
-      const result = await api("/api/parish/videos", { method: "POST", body: JSON.stringify({ url: pending.youtubeUrl }) });
+      const result = await api("/api/parish/videos", { method: "POST", body: JSON.stringify({ url: pending.youtubeUrl, tags: tagsInput.value }) });
       urlInput.value = "";
+      tagsInput.value = "";
+      document.querySelector("#video-tag-preview").innerHTML = "";
       pending = null;
       preview.hidden = true;
+      tagsField.hidden = true;
       await loadVideos();
       notice(result.message);
     } catch (error) {
@@ -74,7 +87,7 @@
     try {
       const videos = await api("/api/parish/videos");
       const list = document.querySelector("#video-list");
-      list.innerHTML = videos.map((video) => `<article class="video-card" data-video="${video.id}"><a href="${video.youtubeUrl}" target="_blank" rel="noopener noreferrer"><img src="${video.thumbnailUrl}" alt=""></a><div><h4>${escapeHtml(video.title)}</h4><p>${escapeHtml(video.authorName || "\uCC44\uB110 \uC815\uBCF4 \uC5C6\uC74C")}</p><small>${new Date(video.createdAt).toLocaleDateString("ko-KR")} \uB4F1\uB85D</small></div><button type="button" aria-label="\uC0AD\uC81C">\uC0AD\uC81C</button></article>`).join("");
+      list.innerHTML = videos.map((video) => `<article class="video-card" data-video="${video.id}"><a href="${video.youtubeUrl}" target="_blank" rel="noopener noreferrer"><img src="${video.thumbnailUrl}" alt=""></a><div><h4>${escapeHtml(video.title)}</h4><p>${escapeHtml(video.authorName || "\uCC44\uB110 \uC815\uBCF4 \uC5C6\uC74C")}</p>${video.tags.length ? `<div class="video-card-tags">${video.tags.map((tag) => `<b>#${escapeHtml(tag)}</b>`).join("")}</div>` : ""}<small>${new Date(video.createdAt).toLocaleDateString("ko-KR")} \uB4F1\uB85D</small></div><button type="button" aria-label="\uC0AD\uC81C">\uC0AD\uC81C</button></article>`).join("");
       list.querySelectorAll("[data-video] button").forEach((button) => button.addEventListener("click", () => removeVideo(Number(button.closest("[data-video]").dataset.video))));
       document.querySelector("#video-count").textContent = `\uCD1D ${videos.length}\uAC1C`;
       document.querySelector("#video-empty").hidden = videos.length > 0;
