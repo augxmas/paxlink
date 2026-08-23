@@ -119,3 +119,5 @@ form.addEventListener("submit", async (event) => {
   } catch (error) { setMessage((error as Error).message, true); }
 });
 document.head.insertAdjacentHTML("beforeend",'<link rel="icon" type="image/svg+xml" href="/assets/favicon-parish.svg">');
+import { mountRequiredMarkers } from "./required-markers";
+mountRequiredMarkers();

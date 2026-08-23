@@ -1,5 +1,6 @@
 import "./parish-suggestions";
 import "./parish-memorials";
+import "./parish-legion";
 declare global { interface Window { daum?: { Postcode: new (options:{oncomplete:(data:{zonecode:string;roadAddress:string;jibunAddress:string})=>void})=>{open:()=>void} } } }
 type FieldName="managerName"|"name"|"parishCode"|"phone"|"postalCode"|"address"|"addressDetail"|"diocese"|"district"|"jurisdiction"|"officePhone"|"fax"|"homepage";
 type Profile={id:number;manager_name:string|null;manager_email:string;name:string;parish_code:string;phone:string;postal_code:string;address:string;address_detail:string;diocese:string;district:string;jurisdiction:string;office_phone:string;fax:string|null;homepage:string|null;approval_status:string;modified_at:string|null};
@@ -39,3 +40,5 @@ new MutationObserver(mountGridReloadButtons).observe(dashboard,{childList:true,s
 mountGridReloadButtons();
 export {};
 import {startSessionCountdown,stopSessionCountdown} from "./session-countdown";
+import { mountRequiredMarkers } from "./required-markers";
+mountRequiredMarkers();

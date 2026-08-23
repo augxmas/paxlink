@@ -1,5 +1,28 @@
 "use strict";
 (() => {
+  // src/client/required-markers.ts
+  var REQUIRED_MARKER_SELECTOR = "label > i, legend > i, label > span > i";
+  function normalizeRequiredMarkers(root = document) {
+    root.querySelectorAll(REQUIRED_MARKER_SELECTOR).forEach((marker) => {
+      if (marker.textContent?.trim() !== "*" || marker.dataset.requiredLeading === "true") return;
+      const parent = marker.parentElement;
+      if (!parent) return;
+      marker.dataset.requiredLeading = "true";
+      parent.insertBefore(document.createTextNode(" "), parent.firstChild);
+      parent.insertBefore(marker, parent.firstChild);
+    });
+  }
+  function mountRequiredMarkers() {
+    normalizeRequiredMarkers();
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => mutation.addedNodes.forEach((node) => {
+        if (!(node instanceof Element)) return;
+        normalizeRequiredMarkers(node.matches(REQUIRED_MARKER_SELECTOR) ? node.parentElement ?? document : node);
+      }));
+    });
+    observer.observe(document.documentElement, { childList: true, subtree: true });
+  }
+
   // src/client/parishioner-register.ts
   var search = document.querySelector("#join-parish-search");
   var parishId = document.querySelector("#join-parish-id");
@@ -143,9 +166,17 @@
   nameLabel.innerHTML = '<i>*</i> \uC774\uB984<input id="join-member-name" readonly>';
   emailLabel.className = "full";
   emailLabel.innerHTML = '<span>\uC774\uBA54\uC77C</span><input id="join-member-email" type="email" readonly><small>\uC774\uBA54\uC77C\uC740 \uB85C\uADF8\uC778 \uC2DD\uBCC4 \uC815\uBCF4\uC774\uBBC0\uB85C \uBCC0\uACBD\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.</small>';
-  genderLabel.innerHTML = '<span>\uC131\uBCC4</span><select id="join-gender"><option value="">\uC120\uD0DD \uC548 \uD568</option><option value="male">\uB0A8\uC131</option><option value="female">\uC5EC\uC131</option><option value="other">\uAE30\uD0C0</option></select>';
-  var registrationGender = genderLabel.querySelector("select");
-  var memberName = nameLabel.querySelector("input");
+  genderLabel.className = "join-gender-field";
+  genderLabel.innerHTML = '<span>\uC131\uBCC4</span><input id="join-gender" type="hidden"><span class="join-gender-options"><label><input type="checkbox" value="male"> \uB0A8</label><label><input type="checkbox" value="female"> \uC5EC</label></span>';
+  var registrationGender = genderLabel.querySelector("#join-gender");
+  var genderChecks = [...genderLabel.querySelectorAll('.join-gender-options input[type="checkbox"]')];
+  genderChecks.forEach((check) => check.addEventListener("change", () => {
+    if (check.checked) genderChecks.forEach((other) => {
+      if (other !== check) other.checked = false;
+    });
+    registrationGender.value = genderChecks.find((item) => item.checked)?.value ?? "";
+  }));
+  var memberName = nameLabel.querySelector('input:not([type="checkbox"])');
   var memberEmail = emailLabel.querySelector("input");
   var syncVerifiedIdentity = () => {
     memberName.value = nameInput.value;
@@ -209,6 +240,7 @@
       msg(error.message, true);
     }
   });
+  document.head.insertAdjacentHTML("beforeend", '<style>.join-gender-field>.join-gender-options{display:flex;gap:18px;height:44px;align-items:center}.join-gender-field>.join-gender-options label{display:inline-flex;align-items:center;gap:7px;width:auto;margin:0;font-weight:600}.join-gender-field>.join-gender-options input[type="checkbox"]{width:17px;height:17px;margin:0;accent-color:var(--green)}</style>');
   document.head.insertAdjacentHTML("beforeend", '<link rel="icon" type="image/svg+xml" href="/assets/favicon-parishioner.svg">');
   document.head.insertAdjacentHTML("beforeend", "<style>#join-send-code:disabled,#join-verify-code:disabled{border-color:#d8e1de;background:#e4ebe8;color:#96a19d;cursor:not-allowed}</style>");
   document.querySelectorAll(".join-grid label").forEach((label) => {
@@ -221,4 +253,5 @@
   var memberDetailsHeading = document.querySelector("#join-details>h2");
   memberDetailsHeading.append(memberLockedNotice);
   document.head.insertAdjacentHTML("beforeend", "<style>#join-details>h2 .locked-notice{position:static;inset:auto;margin-left:4px;color:var(--muted);font-size:11px;font-weight:500;text-align:left}@media(max-width:600px){#join-details>h2{flex-wrap:wrap}#join-details>h2 .locked-notice{flex:1 0 auto;margin-left:0}}</style>");
+  mountRequiredMarkers();
 })();

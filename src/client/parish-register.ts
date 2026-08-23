@@ -144,3 +144,5 @@ form.addEventListener("submit", async (event) => {
 
 export {};
 document.head.insertAdjacentHTML("beforeend",'<link rel="icon" type="image/svg+xml" href="/assets/favicon-parish.svg">');
+import { mountRequiredMarkers } from "./required-markers";
+mountRequiredMarkers();

@@ -384,6 +384,7 @@
   document.head.insertAdjacentHTML("beforeend", "<style>.schedule-attachment-field small{display:block;margin-top:4px;color:var(--muted);font-size:9px}.schedule-attachment-link{display:block;margin-top:7px;color:var(--blue);font-size:10px;font-weight:700;text-decoration:none}.schedule-attachment-link:hover{text-decoration:underline}</style>");
   document.head.insertAdjacentHTML("beforeend", '<style>.calendar-day em[draggable="true"]{cursor:grab;user-select:none}.calendar-day em[draggable="true"]:active{cursor:grabbing}.calendar-day em.schedule-selected{outline:2px solid var(--blue);outline-offset:1px}.calendar-day em.schedule-dragging{opacity:.45}.calendar-day.schedule-drop-target{position:relative;background:#e8f4ff!important;box-shadow:inset 0 0 0 2px var(--blue)}.calendar-day.schedule-drop-target:after{position:absolute;inset:auto 5px 5px;padding:3px;border-radius:5px;background:var(--blue);color:#fff;content:"\uC774 \uB0A0\uC9DC\uB85C \uC774\uB3D9";font-size:8px;font-weight:800;text-align:center;pointer-events:none}</style>');
   document.head.insertAdjacentHTML("beforeend", "<style>.schedule-interaction-help{margin:-5px 18px 12px;padding:8px 11px;border-radius:7px;background:#f1f6fd;color:#5d6f87;font-size:9px;line-height:1.5;text-align:center}</style>");
+  document.head.insertAdjacentHTML("beforeend", "<style>.selected-date-schedules article>p{white-space:pre-wrap;overflow-wrap:anywhere}</style>");
 
   // src/client/parish-notices.ts
   var panel = document.querySelector("#notice-management");
@@ -502,7 +503,7 @@
   document.querySelectorAll("[data-notice-close]").forEach((element) => element.addEventListener("click", close));
 
   // src/client/parish-parishioners.ts
-  var defaults = [{ key: "name", label: "\uC774\uB984", visible: true, align: "left", frozen: false }, { key: "baptismalName", label: "\uC138\uB840\uBA85", visible: true, align: "left", frozen: false }, { key: "birthDate", label: "\uC0DD\uB144\uC6D4\uC77C", visible: true, align: "center", frozen: false }, { key: "phone", label: "\uC804\uD654\uBC88\uD638", visible: true, align: "center", frozen: false }, { key: "mobile", label: "\uD734\uB300\uC804\uD654", visible: true, align: "center", frozen: false }, { key: "email", label: "\uC774\uBA54\uC77C", visible: true, align: "left", frozen: false }, { key: "fullAddress", label: "\uC8FC\uC18C", visible: true, align: "left", frozen: false }, { key: "groupCount", label: "\uB2E8\uCCB4(\uC218)", visible: true, align: "center", frozen: false }, { key: "missionCount", label: "\uBBF8\uC158", visible: true, align: "center", frozen: false }, { key: "joinedAt", label: "\uAC00\uC785\uC77C", visible: true, align: "center", frozen: false }];
+  var defaults = [{ key: "name", label: "\uC774\uB984", visible: true, align: "left", frozen: false }, { key: "baptismalName", label: "\uC138\uB840\uBA85", visible: true, align: "left", frozen: false }, { key: "gender", label: "\uC131\uBCC4", visible: true, align: "center", frozen: false }, { key: "birthDate", label: "\uC0DD\uB144\uC6D4\uC77C", visible: true, align: "center", frozen: false }, { key: "phone", label: "\uC804\uD654\uBC88\uD638", visible: true, align: "center", frozen: false }, { key: "mobile", label: "\uD734\uB300\uC804\uD654", visible: true, align: "center", frozen: false }, { key: "email", label: "\uC774\uBA54\uC77C", visible: true, align: "left", frozen: false }, { key: "fullAddress", label: "\uC8FC\uC18C", visible: true, align: "left", frozen: false }, { key: "groupCount", label: "\uB2E8\uCCB4(\uC218)", visible: true, align: "center", frozen: false }, { key: "missionCount", label: "\uBBF8\uC158", visible: true, align: "center", frozen: false }, { key: "legionCount", label: "\uB808\uC9C0\uC624\uB9C8\uB9AC\uC5D0", visible: true, align: "center", frozen: false }, { key: "joinedAt", label: "\uAC00\uC785\uC77C", visible: true, align: "center", frozen: false }];
   var storageKey = "paxlink.parishioner-grid.columns";
   var items2 = [];
   var columns = loadColumns();
@@ -535,6 +536,7 @@
   }
   function display(item, key) {
     const raw = value(item, key);
+    if (key === "gender") return { male: "\uB0A8", female: "\uC5EC", other: "\uAE30\uD0C0" }[String(raw)] ?? "-";
     return key === "birthDate" || key === "joinedAt" ? new Date(String(raw)).toLocaleDateString("ko-KR") : String(raw || "-");
   }
   document.querySelectorAll("[data-main-view]").forEach((button) => button.addEventListener("click", async () => {
@@ -687,6 +689,37 @@
       cell.querySelector("button").addEventListener("click", () => openPersonMissions(person));
     });
   }).observe(document.querySelector("#parishioner-grid"), { childList: true, subtree: true });
+  new MutationObserver(() => {
+    const table = document.querySelector("#parishioner-grid .parishioner-grid"), visible = columns.filter((column) => column.visible), index = visible.findIndex((column) => column.key === "legionCount");
+    if (!table || index < 0 || table.dataset.legionDecorated) return;
+    table.dataset.legionDecorated = "true";
+    const ordered = [...items2];
+    if (sort) ordered.sort((a, b) => {
+      const result = String(value(a, sort.key)).localeCompare(String(value(b, sort.key)), "ko", { numeric: true });
+      return sort.direction === "asc" ? result : -result;
+    });
+    [...table.tBodies[0].rows].forEach((row, rowIndex) => {
+      const person = ordered[rowIndex], cell = row.cells[index];
+      cell.innerHTML = `<button class="person-group-count" type="button">\uAD00\uB9AC</button>`;
+      cell.querySelector("button").addEventListener("click", () => openPersonLegion(person));
+    });
+  }).observe(document.querySelector("#parishioner-grid"), { childList: true, subtree: true });
+  async function openPersonLegion(person) {
+    document.querySelector(".person-legion-modal")?.remove();
+    const layer = document.createElement("div");
+    layer.className = "priest-modal person-legion-modal";
+    layer.innerHTML = `<div class="priest-modal-backdrop" data-close></div><section class="priest-modal-box group-members-box"><header><div><p>LEGIO MARIAE</p><h2>${escapeHtml2(person.name)} \uB808\uC9C0\uC624\uB9C8\uB9AC\uC5D0 \uC18C\uC18D</h2></div><button data-close type="button">\xD7</button></header><div class="group-members-content">\uBD88\uB7EC\uC624\uB294 \uC911...</div><footer><button class="secondary" data-close type="button">\uB2EB\uAE30</button></footer></section>`;
+    document.body.append(layer);
+    layer.querySelectorAll("[data-close]").forEach((button) => button.addEventListener("click", () => layer.remove()));
+    try {
+      const response = await fetch(`/api/parish/parishioners/${person.id}/legion`), result = await response.json();
+      if (!response.ok) throw new Error(result.message);
+      const roles = { president: "\uB2E8\uC7A5", vice_president: "\uBD80\uB2E8\uC7A5", secretary: "\uC11C\uAE30", treasurer: "\uD68C\uACC4", member: "\uB2E8\uC6D0" };
+      layer.querySelector(".group-members-content").innerHTML = result.items.length ? `<div class="group-members-table-wrap"><table><thead><tr><th>\uC870\uC9C1 \uAD6C\uBD84</th><th>\uC870\uC9C1\uBA85</th><th>\uC9C1\uC704</th><th>\uAC00\uC785\uC77C</th><th>\uC885\uB8CC\uC77C</th></tr></thead><tbody>${result.items.map((item) => `<tr><td>${item.organizationType === "curia" ? "\uAFB8\uB9AC\uC544" : "\uC058\uB808\uC2DC\uB514\uC6C0"}</td><td>${escapeHtml2(item.name)}</td><td>${roles[item.role]}</td><td>${new Date(item.joinedAt).toLocaleDateString("ko-KR")}</td><td>${item.endedAt ? new Date(item.endedAt).toLocaleDateString("ko-KR") : "-"}</td></tr>`).join("")}</tbody></table></div>` : '<div class="group-members-empty">\uC18C\uC18D\uB41C \uB808\uC9C0\uC624\uB9C8\uB9AC\uC5D0 \uC870\uC9C1\uC774 \uC5C6\uC2B5\uB2C8\uB2E4.</div>';
+    } catch (error) {
+      layer.querySelector(".group-members-content").textContent = error.message;
+    }
+  }
   async function openPersonGroups(person) {
     let modal3 = document.querySelector("#person-groups-modal");
     if (!modal3) {
