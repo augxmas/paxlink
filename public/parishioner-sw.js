@@ -1,10 +1,11 @@
-const CACHE_NAME="paxlink-parishioner-v9";
+const CACHE_NAME="paxlink-parishioner-v14";
 const APP_SHELL=[
   "/parishioner/",
   "/parishioner/parishioner.css?v=20260817-3",
-  "/assets/parishioner.js?v=20260823-120",
-  "/assets/paxlink-pwa-icon.svg",
-  "/parishioner/manifest.webmanifest",
+  "/assets/parishioner.js?v=20260825-124",
+  "/assets/paxlink-pwa-192.png",
+  "/assets/paxlink-pwa-512.png",
+  "/parishioner/manifest.webmanifest?v=2",
   "/parishioner/offline.html"
 ];
 self.addEventListener("install",event=>{event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.addAll(APP_SHELL)).then(()=>self.skipWaiting()))});

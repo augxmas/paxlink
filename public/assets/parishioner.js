@@ -44,13 +44,16 @@
     button.textContent = "\uC5F0\uC7A5 \uC911...";
     error.textContent = "";
     try {
-      const response = await nativeFetch(extendUrl, { method: "GET", headers: { "Cache-Control": "no-cache" } });
+      const response = await nativeFetch(extendUrl, { method: current.extendMethod ?? "GET", cache: "no-store" });
       if (response.status === 401) {
         stopSessionCountdown();
         location.href = current.redirectUrl;
         return;
       }
-      if (!response.ok) throw new Error("\uB85C\uADF8\uC778 \uC5F0\uC7A5\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4.");
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        throw new Error(data?.message ?? "\uB85C\uADF8\uC778 \uC5F0\uC7A5\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4.");
+      }
       resetDeadline();
     } catch (reason) {
       button.disabled = false;
@@ -2504,6 +2507,10 @@
       closeGateway();
       requestAnimationFrame(() => document.querySelector('[data-parish-information="basic"]')?.click());
     },
+    dictionary: () => {
+      closeGateway();
+      document.dispatchEvent(new CustomEvent("member:gateway-dictionary"));
+    },
     home: () => openGatewaySection(".member-home")
   };
   function closeGateway() {
@@ -2527,9 +2534,21 @@
     const layer = document.createElement("section");
     layer.className = "member-faith-gateway";
     layer.setAttribute("aria-label", "\uC2E0\uB3C4 \uC11C\uBE44\uC2A4 \uC2DC\uC791 \uBA54\uB274");
-    layer.innerHTML = `<div class="faith-gateway-glass" aria-hidden="true"><i></i><i></i><i></i><i></i></div><header><div class="faith-gateway-cross" aria-hidden="true">\u271D</div><small>PAXLINK CATHOLIC COMMUNITY</small><h1>\uD568\uAED8 \uAE30\uB3C4\uD558\uACE0,<br>\uB098\uB204\uACE0, \uC131\uC7A5\uD569\uB2C8\uB2E4</h1><p>\uC77C\uC0C1 \uC548\uC5D0\uC11C \uC774\uC5B4\uC9C0\uB294 \uCC9C\uC8FC\uAD50 \uACF5\uB3D9\uCCB4</p></header><main class="faith-gateway-dashboard"><button class="faith-gateway-home" data-gateway="home" type="button"><span>\uC624\uB298\uC758 \uACF5\uB3D9\uCCB4</span><strong>\uCC2C\uBBF8 \uC608\uC218\uB2D8</strong><small>\uC2E0\uB3C4 \uD648\uC73C\uB85C \uC774\uB3D9</small><i>\u203A</i></button><section><h2>\uC2E0\uC559\uC0DD\uD65C</h2><div class="faith-gateway-grid"><button data-gateway="schedule" type="button"><span class="blue">\u25A3</span><b>\uC131\uB2F9 \uC77C\uC815</b><small>\uBBF8\uC0AC\uC640 \uBCF8\uB2F9 \uC77C\uC815</small></button><button data-gateway="faith" type="button"><span class="violet">\u2726</span><b>\uC2E0\uC559\uD65C\uB3D9</b><small>\uC740\uCD1D\uC77C\uAE30\uC640 \uD65C\uB3D9\uBCF4\uACE0</small></button><button data-gateway="shrines" type="button"><span class="gold">\u2302</span><b>\uC131\uC9C0\uC21C\uB840</b><small>\uC21C\uB840\uC9C0\uC640 \uBC29\uBB38 \uAE30\uB85D</small></button><button data-gateway="legion" type="button"><span class="green">\u2720</span><b>\uB808\uC9C0\uC624\uB9C8\uB9AC\uC560</b><small>\uC870\uC9C1\uACFC \uACF5\uB3D9\uCCB4 \uD65C\uB3D9</small></button></div></section><section><h2>\uACF5\uB3D9\uCCB4</h2><div class="faith-gateway-grid compact"><button data-gateway="groups" type="button"><span class="rose">\u2659</span><b>\uB2E8\uCCB4</b></button><button data-gateway="sharing" type="button"><span class="sky">\u2661</span><b>\uB098\uB214</b></button><button data-gateway="videos" type="button"><span class="red">\u25B6</span><b>\uB3D9\uC601\uC0C1</b></button><button data-gateway="notices" type="button"><span class="amber">!</span><b>\uACF5\uC9C0\uC0AC\uD56D</b></button></div></section><button class="faith-gateway-parish" data-gateway="parish" type="button"><span>\u24D8</span><b>\uC131\uB2F9\uC815\uBCF4</b><small>\uBCF8\uB2F9 \uAE30\uBCF8\uC815\uBCF4\uC640 \uC2E0\uBD80\uB2D8 \uC548\uB0B4</small><i>\u203A</i></button></main>`;
+    layer.innerHTML = `<div class="faith-gateway-glass" aria-hidden="true"><i></i><i></i><i></i><i></i></div><header><div class="faith-gateway-cross" aria-hidden="true">\u271D</div><small>PAXLINK CATHOLIC COMMUNITY</small><h1>\uD568\uAED8 \uAE30\uB3C4\uD558\uACE0,<br>\uB098\uB204\uACE0, \uC131\uC7A5\uD569\uB2C8\uB2E4</h1><p>\uC77C\uC0C1 \uC548\uC5D0\uC11C \uC774\uC5B4\uC9C0\uB294 \uCC9C\uC8FC\uAD50 \uACF5\uB3D9\uCCB4</p></header><main class="faith-gateway-dashboard"><button class="faith-gateway-home" data-gateway="home" type="button"><span>\uC624\uB298\uC758 \uACF5\uB3D9\uCCB4</span><strong>\uCC2C\uBBF8 \uC608\uC218\uB2D8</strong><small>\uC2E0\uB3C4 \uD648\uC73C\uB85C \uC774\uB3D9</small><i>\u203A</i></button><section><h2>\uC2E0\uC559\uC0DD\uD65C</h2><div class="faith-gateway-grid"><button data-gateway="schedule" type="button"><span class="blue">\u25A3</span><b>\uC131\uB2F9 \uC77C\uC815</b><small>\uBBF8\uC0AC\uC640 \uBCF8\uB2F9 \uC77C\uC815</small></button><button data-gateway="faith" type="button"><span class="violet">\u2726</span><b>\uC2E0\uC559\uD65C\uB3D9</b><small>\uC740\uCD1D\uC77C\uAE30\uC640 \uD65C\uB3D9\uBCF4\uACE0</small></button><button data-gateway="shrines" type="button"><span class="gold">\u2302</span><b>\uC131\uC9C0\uC21C\uB840</b><small>\uC21C\uB840\uC9C0\uC640 \uBC29\uBB38 \uAE30\uB85D</small></button><button data-gateway="legion" type="button"><span class="green">\u2720</span><b>\uB808\uC9C0\uC624\uB9C8\uB9AC\uC560</b><small>\uC870\uC9C1\uACFC \uACF5\uB3D9\uCCB4 \uD65C\uB3D9</small></button></div></section><section><h2>\uACF5\uB3D9\uCCB4</h2><div class="faith-gateway-grid compact"><button data-gateway="groups" type="button"><span class="rose">\u2659</span><b>\uB2E8\uCCB4</b></button><button data-gateway="sharing" type="button"><span class="sky">\u2661</span><b>\uB098\uB214</b></button><button data-gateway="videos" type="button"><span class="red">\u25B6</span><b>\uB3D9\uC601\uC0C1</b></button><button data-gateway="notices" type="button"><span class="amber">!</span><b>\uACF5\uC9C0\uC0AC\uD56D</b></button></div></section><button class="faith-gateway-parish" data-gateway="parish" type="button"><span>\u24D8</span><b>\uC131\uB2F9\uC815\uBCF4</b><small>\uBCF8\uB2F9 \uAE30\uBCF8\uC815\uBCF4\uC640 \uC2E0\uBD80\uB2D8 \uC548\uB0B4</small><i>\u203A</i></button><button class="faith-gateway-parish faith-gateway-dictionary" data-gateway="dictionary" type="button"><span>\u25A4</span><b>\uC6A9\uC5B4\uC0AC\uC804</b><small>\uAC00\uD1A8\uB9AD \uC2E0\uC559 \uC6A9\uC5B4\uB97C \uC27D\uAC8C \uCC3E\uC544\uBCF4\uAE30</small><i>\u203A</i></button></main>`;
     document.body.append(layer);
     document.body.classList.add("member-gateway-open");
+    const gatewayCross = layer.querySelector(".faith-gateway-cross");
+    gatewayCross.setAttribute("role", "link");
+    gatewayCross.setAttribute("tabindex", "0");
+    gatewayCross.setAttribute("aria-label", "Paxlink \uD648\uD398\uC774\uC9C0\uB85C \uC774\uB3D9");
+    gatewayCross.style.cursor = "pointer";
+    gatewayCross.onclick = () => location.href = "/";
+    gatewayCross.onkeydown = (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        location.href = "/";
+      }
+    };
     layer.querySelectorAll("[data-gateway]").forEach((button) => button.onclick = () => gatewayTargets[button.dataset.gateway]?.());
     const requestedMenu = new URLSearchParams(location.search).get("menu");
     if (requestedMenu && gatewayTargets[requestedMenu]) requestAnimationFrame(() => gatewayTargets[requestedMenu]());
@@ -2545,6 +2564,104 @@ body.member-gateway-open{overflow:hidden}.member-faith-gateway{position:fixed;z-
   document.head.insertAdjacentHTML("beforeend", `<style>
 .member-faith-gateway{display:block;padding:0 0 42px;background:#f4f1eb;color:#263c35;font-family:"Noto Sans KR",Arial,sans-serif}.member-faith-gateway:before{border:0;background:none}.member-faith-gateway>header{position:relative;display:block;min-height:245px;padding:42px 28px 70px;box-sizing:border-box;overflow:hidden;background:linear-gradient(145deg,#092f2a,#105744 65%,#287863);color:#fff;text-align:left}.member-faith-gateway>header:after{position:absolute;right:-65px;bottom:-115px;width:260px;height:260px;border:1px solid rgba(255,225,147,.18);border-radius:50%;content:""}.faith-gateway-cross{display:grid;width:46px;height:46px;margin-bottom:21px;place-items:center;border:1px solid rgba(255,230,170,.45);border-radius:15px;background:rgba(255,255,255,.1);color:#f5d88b;font-family:Georgia,serif;font-size:25px;box-shadow:0 8px 25px rgba(0,0,0,.14)}.member-faith-gateway>header small{color:#e8cc83;font-size:9px;font-weight:800;letter-spacing:3px}.member-faith-gateway>header h1{margin:11px 0 9px;color:#fff;font-family:Georgia,"Noto Serif KR",serif;font-size:27px;line-height:1.42}.member-faith-gateway>header p{margin:0;color:#d1e2dc;font-size:11px;letter-spacing:0}.faith-gateway-glass{position:absolute;z-index:2;top:20px;right:18px;display:grid;width:100px;height:100px;grid-template-columns:1fr 1fr;gap:3px;opacity:.22;transform:rotate(12deg);pointer-events:none}.faith-gateway-glass i{border-radius:45% 8%;background:#f0c760}.faith-gateway-glass i:nth-child(2){background:#77b7dc}.faith-gateway-glass i:nth-child(3){background:#9d79c4}.faith-gateway-glass i:nth-child(4){background:#e88378}.faith-gateway-dashboard{position:relative;z-index:3;width:min(100% - 28px,620px);margin:-40px auto 0}.faith-gateway-home,.faith-gateway-parish{position:relative;display:grid;width:100%;grid-template-columns:1fr auto;padding:18px 20px;border:1px solid #dce6e1;border-radius:17px;background:#fff;color:#263c35;text-align:left;box-shadow:0 12px 30px rgba(18,61,48,.12);cursor:pointer}.faith-gateway-home span{grid-column:1;color:#32866b;font-size:9px;font-weight:800}.faith-gateway-home strong{grid-column:1;margin-top:4px;font-family:Georgia,"Noto Serif KR",serif;font-size:18px}.faith-gateway-home small{grid-column:1;margin-top:4px;color:#84918c}.faith-gateway-home i,.faith-gateway-parish i{grid-row:1/4;grid-column:2;align-self:center;color:#4d9a81;font-size:25px;font-style:normal}.faith-gateway-dashboard>section{margin-top:22px}.faith-gateway-dashboard>section>h2{margin:0 0 10px 4px;color:#42564e;font-size:12px}.faith-gateway-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.faith-gateway-grid button{display:grid;min-height:118px;grid-template-columns:43px 1fr;align-content:center;align-items:center;gap:2px 11px;padding:15px;border:1px solid #e0e7e3;border-radius:16px;background:#fff;color:#31463e;text-align:left;box-shadow:0 4px 15px rgba(30,66,55,.055);cursor:pointer;transition:.18s}.faith-gateway-grid button:hover,.faith-gateway-grid button:focus-visible{border-color:#78bca7;transform:translateY(-2px);box-shadow:0 9px 20px rgba(27,87,68,.12)}.faith-gateway-grid button>span{display:grid;width:43px;height:43px;grid-row:1/3;place-items:center;border-radius:13px;background:#e9f2ff;color:#3975ad;font-family:Georgia,serif;font-size:19px;font-weight:800}.faith-gateway-grid button>span.violet{background:#f1ebfb;color:#7954aa}.faith-gateway-grid button>span.gold{background:#fff4d9;color:#a97512}.faith-gateway-grid button>span.green{background:#e4f4ed;color:#247459}.faith-gateway-grid button>span.rose{background:#fcebed;color:#ac5361}.faith-gateway-grid button>span.sky{background:#e6f4fa;color:#347d9d}.faith-gateway-grid button>span.red{background:#fee9e7;color:#bc4e43}.faith-gateway-grid button>span.amber{background:#fff1dc;color:#a96b16}.faith-gateway-grid button>b{align-self:end;font-size:12px}.faith-gateway-grid button>small{align-self:start;color:#87938e;font-size:8px;line-height:1.35}.faith-gateway-grid.compact button{min-height:82px}.faith-gateway-grid.compact button>span{grid-row:1}.faith-gateway-grid.compact button>b{align-self:center}.faith-gateway-parish{margin-top:18px;grid-template-columns:38px 1fr auto;align-items:center;padding:14px 17px;box-shadow:none}.faith-gateway-parish>span{grid-row:1/3;display:grid;width:32px;height:32px;place-items:center;border-radius:10px;background:#edf5f2;color:#3d806a}.faith-gateway-parish>b{grid-column:2;font-size:11px}.faith-gateway-parish>small{grid-column:2;color:#87938e;font-size:8px}.faith-gateway-parish>i{grid-row:1/3;grid-column:3}@media(max-width:430px){.member-faith-gateway>header{min-height:225px;padding:30px 22px 62px}.member-faith-gateway>header h1{font-size:24px}.faith-gateway-dashboard{width:calc(100% - 24px)}.faith-gateway-grid button{min-height:105px;padding:12px;grid-template-columns:39px 1fr;gap-left:8px}.faith-gateway-grid button>span{width:39px;height:39px}.faith-gateway-grid.compact button{min-height:76px}.faith-gateway-home{padding:16px 17px}}
 </style>`);
+
+  // src/client/pwa-install.ts
+  var DISMISSED_DATE_KEY = "paxlink-pwa-install-dismissed-date";
+  var mobileDevice = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || matchMedia("(pointer: coarse)").matches;
+  var iosDevice = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+  var deferredInstallPrompt = null;
+  var modalShown = false;
+  function localDateKey() {
+    const now = /* @__PURE__ */ new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  }
+  function isStandalone() {
+    const pwaNavigator = navigator;
+    return matchMedia("(display-mode: standalone)").matches || matchMedia("(display-mode: fullscreen)").matches || pwaNavigator.standalone === true;
+  }
+  function dismissedToday() {
+    try {
+      return localStorage.getItem(DISMISSED_DATE_KEY) === localDateKey();
+    } catch {
+      return false;
+    }
+  }
+  function rememberToday() {
+    try {
+      localStorage.setItem(DISMISSED_DATE_KEY, localDateKey());
+    } catch {
+    }
+  }
+  async function isAlreadyInstalled() {
+    if (isStandalone()) return true;
+    const pwaNavigator = navigator;
+    if (!pwaNavigator.getInstalledRelatedApps) return false;
+    try {
+      return (await pwaNavigator.getInstalledRelatedApps()).length > 0;
+    } catch {
+      return false;
+    }
+  }
+  function closeInstallModal(modal2) {
+    modal2.remove();
+    deferredInstallPrompt = null;
+  }
+  async function showInstallModal() {
+    if (modalShown || !mobileDevice || dismissedToday() || await isAlreadyInstalled()) return;
+    if (!iosDevice && !deferredInstallPrompt) return;
+    modalShown = true;
+    const modal2 = document.createElement("div");
+    modal2.className = "member-modal pwa-install-modal";
+    modal2.setAttribute("role", "dialog");
+    modal2.setAttribute("aria-modal", "true");
+    modal2.setAttribute("aria-labelledby", "pwa-install-title");
+    modal2.innerHTML = `
+    <section class="member-modal-box">
+      <div class="pwa-install-icon"><img src="/assets/paxlink-pwa-192.png" alt=""></div>
+      <h3 id="pwa-install-title">Paxlink\uB97C \uC124\uCE58\uD574 \uBCF4\uC138\uC694</h3>
+      <div class="member-modal-body">
+        <p>\uD648 \uD654\uBA74\uC5D0\uC11C \uBC14\uB85C \uC5F4\uBA74 \uBCF8\uB2F9 \uC18C\uC2DD\uACFC \uC2E0\uC559 \uACF5\uB3D9\uCCB4\uB97C \uB354 \uD3B8\uB9AC\uD558\uAC8C \uB9CC\uB0A0 \uC218 \uC788\uC2B5\uB2C8\uB2E4.</p>
+        ${iosDevice ? '<p class="pwa-install-guide"><b>\uACF5\uC720</b> \uBC84\uD2BC\uC744 \uB204\uB978 \uB4A4 <b>\uD648 \uD654\uBA74\uC5D0 \uCD94\uAC00</b>\uB97C \uC120\uD0DD\uD574 \uC8FC\uC138\uC694.</p>' : ""}
+        <label class="pwa-install-today"><input type="checkbox"> \uC624\uB298 \uD558\uB8E8 \uC548 \uBCF4\uAE30</label>
+      </div>
+      <footer class="pwa-install-actions">
+        <button type="button" class="green-outline" data-pwa-close>\uB2E4\uC74C\uC5D0</button>
+        <button type="button" class="green-button" data-pwa-install>${iosDevice ? "\uD655\uC778" : "\uC124\uCE58\uD558\uAE30"}</button>
+      </footer>
+    </section>`;
+    document.body.append(modal2);
+    const today = modal2.querySelector(".pwa-install-today input");
+    const close = () => {
+      if (today.checked) rememberToday();
+      closeInstallModal(modal2);
+    };
+    modal2.querySelector("[data-pwa-close]").addEventListener("click", close);
+    modal2.addEventListener("click", (event) => {
+      if (event.target === modal2) close();
+    });
+    modal2.querySelector("[data-pwa-install]").addEventListener("click", async () => {
+      if (today.checked) rememberToday();
+      if (iosDevice || !deferredInstallPrompt) {
+        closeInstallModal(modal2);
+        return;
+      }
+      await deferredInstallPrompt.prompt();
+      const choice = await deferredInstallPrompt.userChoice;
+      if (choice.outcome === "accepted") closeInstallModal(modal2);
+    });
+  }
+  window.addEventListener("beforeinstallprompt", (event) => {
+    event.preventDefault();
+    deferredInstallPrompt = event;
+    void showInstallModal();
+  });
+  window.addEventListener("appinstalled", () => {
+    document.querySelector(".pwa-install-modal")?.remove();
+    deferredInstallPrompt = null;
+  });
+  window.addEventListener("load", () => {
+    if (iosDevice) void showInstallModal();
+  });
 
   // src/client/parishioner-suggestions.ts
   var labels = { like: "\u{1F44D} \uC88B\uC544\uC694", best: "\u{1F31F} \uCD5C\uACE0\uC608\uC694", cheer: "\u{1F4AA} \uD798\uB0B4\uC694", funny: "\u{1F604} \uC6C3\uACA8\uC694", cool: "\u2728 \uBA4B\uC838\uC694", dislike: "\u{1F44E} \uBCC4\uB85C\uC608\uC694" };
@@ -3189,6 +3306,7 @@ body.member-gateway-open{overflow:hidden}.member-faith-gateway{position:fixed;z-
     document.body.classList.remove("member-menu-open");
     void openMemberDictionary();
   });
+  document.addEventListener("member:gateway-dictionary", () => void openMemberDictionary());
   new MutationObserver(mountMemberDictionaryMenu).observe(document.documentElement, { childList: true, subtree: true });
   mountMemberDictionaryMenu();
   document.head.insertAdjacentHTML("beforeend", "<style>.member-dictionary-modal .member-modal-box{display:flex;width:min(94vw,850px);max-height:88vh;flex-direction:column;overflow:hidden;text-align:left}.member-dictionary-modal h3{flex:none;margin:0;padding:18px;background:var(--green);color:#fff;text-align:center}.member-dictionary-body{padding:18px;overflow:auto}.member-dictionary-search{display:grid;grid-template-columns:170px minmax(180px,1fr) auto auto;gap:8px;margin-bottom:10px}.member-dictionary-search select,.member-dictionary-search input{height:42px;padding:0 11px;border:1px solid var(--line);border-radius:8px;background:#fff;font:inherit}.member-dictionary-search button{height:42px;padding:0 18px;border-radius:8px;white-space:nowrap}.member-dictionary-search [data-dictionary-search]{border:0}.member-dictionary-body>[data-result-count]{display:block;margin:10px 0;color:var(--muted)}.member-dictionary-body [data-dictionary-results]{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.member-dictionary-body article{padding:15px;border:1px solid var(--line);border-radius:10px;background:#fbfdfc}.member-dictionary-body article header{display:flex;align-items:baseline;gap:8px}.member-dictionary-body h4{margin:0;font-size:15px}.member-dictionary-body article header small{color:var(--muted)}.member-dictionary-body article>div{display:flex;flex-wrap:wrap;gap:5px;margin:10px 0}.member-dictionary-body article>div span{padding:4px 8px;border-radius:11px;background:#eaf7f1;color:var(--green);font-size:9px}.member-dictionary-body article>p{line-height:1.65}.member-dictionary-body details{padding-top:9px;border-top:1px solid var(--line)}.member-dictionary-body summary{color:var(--green);font-weight:700;cursor:pointer}.member-dictionary-body details section{padding:10px 0;line-height:1.7;white-space:pre-wrap}.member-dictionary-body details a{color:var(--green);font-size:9px}.member-dictionary-empty{grid-column:1/-1;padding:50px;text-align:center;color:var(--muted)}.member-dictionary-modal .member-modal-box>footer{display:flex;justify-content:center;padding:13px;border-top:1px solid var(--line)}@media(max-width:620px){.member-dictionary-body{padding:13px}.member-dictionary-search{grid-template-columns:1fr 1fr}.member-dictionary-search select,.member-dictionary-search input{grid-column:1/-1}.member-dictionary-search button{height:40px}.member-dictionary-body [data-dictionary-results]{grid-template-columns:1fr}.member-dictionary-modal .member-modal-box{width:96vw;max-height:92vh}}</style>");
@@ -6438,6 +6556,7 @@ body.member-gateway-open{overflow:hidden}.member-faith-gateway{position:fixed;z-
   document.head.insertAdjacentHTML("beforeend", '<style>.member-mobile-menu .member-parish-information-toggle>span{width:25px;height:25px;flex-basis:25px;border:1px solid #9ed2c1;border-radius:7px;background:#fff!important;box-shadow:0 1px 3px rgba(20,76,58,.06)}.member-mobile-menu .member-parish-information-toggle>span:before,.member-mobile-menu .member-parish-information-toggle>span:after{position:absolute;width:10px;height:2px;border:0;border-radius:2px;background:var(--green);content:"";transform:none!important;transition:opacity .18s,transform .18s}.member-mobile-menu .member-parish-information-toggle>span:after{transform:rotate(90deg)!important}.member-mobile-menu .member-parish-information-toggle[aria-expanded="true"]>span{border-color:var(--green);background:#e7f6f1!important}.member-mobile-menu .member-parish-information-toggle[aria-expanded="true"]>span:before{transform:rotate(180deg)!important}.member-mobile-menu .member-parish-information-toggle[aria-expanded="true"]>span:after{opacity:0;transform:rotate(90deg) scale(.25)!important}</style>');
   document.head.insertAdjacentHTML("beforeend", "<style>.member-mobile-menu .member-parish-information-toggle>span{margin-left:16px!important}</style>");
   document.head.insertAdjacentHTML("beforeend", "<style>@media(max-width:600px){.member-mobile-menu>header{height:50px;min-height:50px;padding:0 16px}.member-mobile-menu>header strong{font-size:14px}.member-mobile-menu>header button{width:32px;height:32px;font-size:24px}.member-mobile-menu .member-menu-user{gap:2px;padding:10px 16px}.member-mobile-menu .member-menu-user b{font-size:12px}.member-mobile-menu .member-menu-user small{font-size:8px}.member-mobile-menu>nav{display:flex;min-height:0;flex:1 1 auto;flex-direction:column;padding:7px 10px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}.member-mobile-menu>nav>button[data-member-target]{height:38px;min-height:38px;padding:0 10px;font-size:11px}.member-mobile-menu>nav>button[data-member-target]:before{width:21px;height:21px;flex-basis:21px;margin-right:8px;border-radius:7px;font-size:10px}.member-mobile-menu .member-parish-information-menu{flex:0 0 auto;margin:3px 0;border-radius:11px}.member-mobile-menu .member-parish-information-toggle{height:40px!important;min-height:40px;padding:0 10px!important;font-size:11px!important}.member-mobile-menu .member-parish-information-toggle:before{width:21px;height:21px;margin-right:8px;border-radius:7px;font-size:11px}.member-mobile-menu .member-parish-information-toggle>span{width:22px;height:22px;flex-basis:22px;margin-left:12px!important}.member-mobile-menu .member-parish-information-submenu{gap:4px;padding:3px 7px 7px}.member-mobile-menu .member-parish-information-submenu button{height:34px;padding:0 30px 0 35px!important;border-radius:8px!important;font-size:10px!important}.member-mobile-menu .member-parish-information-submenu button:before{left:10px;width:17px;height:17px;font-size:7px}.member-mobile-menu .member-parish-information-submenu button:after{right:11px;font-size:16px}.member-mobile-menu>footer{gap:5px;padding:7px 10px}.member-mobile-menu>footer button{height:36px;font-size:10px}}</style>");
+  document.head.insertAdjacentHTML("beforeend", '<style>@media(max-width:600px){.member-mobile-menu>nav>button,.member-mobile-menu>nav>.member-parish-information-menu>.member-parish-information-toggle{font-family:"Noto Sans KR",sans-serif!important;font-size:11px!important;font-weight:700!important;line-height:1!important}.member-mobile-menu>nav>button>span:last-child{font:inherit!important}.member-mobile-menu>nav>button{height:38px!important;min-height:38px!important;padding:0 10px!important}}</style>');
   document.head.insertAdjacentHTML("beforeend", "<style>.member-parish-information-modal .member-modal-box>footer{display:flex;flex:0 0 auto;justify-content:center;padding:18px 20px 24px;border-top:1px solid var(--line)}.member-parish-information-modal .member-modal-box>footer button{min-width:90px}</style>");
   function enhancePublicPriestInformation() {
     const modal2 = document.querySelector(".member-parish-information-modal"), title = modal2?.querySelector("h3");
