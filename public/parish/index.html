@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>성당 관리자 로그인 | Paxlink</title>
-  <link rel="stylesheet" href="/parish/parish.css?v=34">
+  <link rel="stylesheet" href="/parish/parish.css?v=36">
   <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
   <style>.notice-options input[type="checkbox"]{flex:0 0 14px!important;width:14px!important;height:14px!important;margin:0!important;accent-color:var(--blue)}.notice-options label{display:inline-flex;align-items:center;gap:6px}.notice-popup-box{width:min(100%,620px);max-height:82vh}.notice-popup-content{min-height:150px;overflow:auto;padding:26px;color:#3d4b61;font-size:13px;line-height:1.8;white-space:pre-wrap}.notice-popup-files{display:flex;gap:7px;flex-wrap:wrap;padding:0 26px 18px}.notice-popup-files a{padding:7px 10px;border-radius:7px;background:#edf4fc;color:var(--blue);font-size:10px}.notice-popup-box footer{justify-content:space-between}.notice-popup-box footer label{color:#536176;font-size:11px}.notice-popup-box footer .primary{width:90px}</style>
   <style>.parishioner-management{overflow:hidden;border:1px solid var(--line);border-radius:17px;background:#fff}.parishioner-header{padding:24px 28px;border-bottom:1px solid var(--line)}.parishioner-header h2{margin:0 0 5px;font-size:20px}.parishioner-header p{margin:0;color:var(--muted);font-size:12px}.parishioner-search{display:flex;gap:8px;padding:17px 28px;background:#f8fafc;border-bottom:1px solid var(--line)}.parishioner-search input{flex:1;height:42px;padding:0 12px;border:1px solid #d5dfeb;border-radius:8px}.parishioner-search button{width:80px;height:42px}.parishioner-summary{padding:18px 28px 8px;color:#66758a;font-size:11px}.parishioner-grid-wrap{overflow-x:auto;margin:0 28px 28px;border:1px solid #dfe6ef;border-radius:9px}.parishioner-grid{width:100%;min-width:1100px;border-collapse:collapse;table-layout:fixed}.parishioner-grid th{padding:12px 11px;background:#f5f8fc;color:#718096;font-size:9px;text-align:left}.parishioner-grid td{padding:12px 11px;border-top:1px solid #e7ecf2;color:#536176;font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.parishioner-grid th:nth-child(1){width:90px}.parishioner-grid th:nth-child(2){width:90px}.parishioner-grid th:nth-child(3){width:100px}.parishioner-grid th:nth-child(4),.parishioner-grid th:nth-child(5){width:120px}.parishioner-grid th:nth-child(6){width:190px}.parishioner-grid th:nth-child(7){width:280px}.parishioner-grid th:nth-child(8){width:100px}.parishioner-grid strong{color:#24334a}.parishioner-grid tbody tr:hover{background:#f8fbff}@media(max-width:720px){.parishioner-search{padding:14px;flex-wrap:wrap}.parishioner-grid-wrap{margin:0 14px 20px}.parishioner-summary{padding:15px 14px 8px}}</style>
@@ -159,7 +159,7 @@
       </section>
       <section id="information-management" class="information-management" hidden>
         <div class="information-subnav"><button class="parish-tag active" type="button">성지순례</button></div>
-        <div class="shrine-card"><header class="shrine-header"><div><h2>성지·순교 사적지·순례지</h2><p>한국천주교주교회의에서 수집한 전국 성지 정보를 조회하고 관리합니다.</p></div><button id="shrine-create" class="primary" type="button">+ 신규 등록</button></header><div class="shrine-filters"><select id="shrine-diocese"><option value="">전체 교구</option></select><input id="shrine-query" placeholder="성지명, 주소, 안내 내용 검색"><button id="shrine-search" class="secondary" type="button">조회</button><button id="shrine-reset" class="text-button" type="button">초기화</button></div><div class="shrine-summary"><span id="shrine-count"></span><small>출처: 한국천주교주교회의 매일미사</small></div><div id="shrine-list" class="shrine-list"></div><div id="shrine-empty" class="history-empty" hidden>검색된 성지가 없습니다.</div></div>
+        <div class="shrine-card"><header class="shrine-header"><div><h2>성지·순교 사적지·순례지</h2><p>전국 성지 정보를 조회하고 본당 신도의 순례 현황을 확인합니다.</p></div></header><div class="shrine-filters"><select id="shrine-diocese"><option value="">전체 교구</option></select><input id="shrine-query" placeholder="성지명, 주소, 안내 내용 검색"><button id="shrine-search" class="secondary" type="button">조회</button><button id="shrine-reset" class="text-button" type="button">초기화</button></div><div class="shrine-summary"><span id="shrine-count"></span><small>출처: 한국천주교주교회의 매일미사</small></div><div id="shrine-list" class="shrine-list"></div><div id="shrine-empty" class="history-empty" hidden>검색된 성지가 없습니다.</div></div>
       </section>
     </section>
   </main>
@@ -184,13 +184,12 @@
     </section>
   </div>
   <script src="/assets/parish.js?v=6" defer></script>
-  <script src="/assets/parish-dashboard.js?v=16" defer></script>
+  <script src="/assets/parish-dashboard.js?v=18" defer></script>
   <script src="/assets/parish-priests.js?v=6" defer></script>
   <script src="/assets/parish-history.js?v=1" defer></script>
   <script src="/assets/parish-patron-saint.js?v=1" defer></script>
   <script src="/assets/parish-administrative-guide.js?v=1" defer></script>
   <script src="/assets/parish-videos.js?v=1" defer></script>
-  <script src="/assets/parish-shrines.js?v=27" defer></script>
-  <script src="/assets/parish-dictionary.js?v=5" defer></script>
+  <script src="/assets/parish-shrines.js?v=28" defer></script>
 </body>
 </html>

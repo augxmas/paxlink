@@ -43,4 +43,7 @@ request<{username:string}>("/api/supervisor/me").then(data=>showApp(data.usernam
 document.head.insertAdjacentHTML("beforeend",'<link rel="icon" type="image/svg+xml" href="/assets/favicon-supervisor.svg">');
 import {startSessionCountdown,stopSessionCountdown} from "./session-countdown";
 import { mountRequiredMarkers } from "./required-markers";
+import "./supervisor-shrines";
+import "./supervisor-dictionary";
+import "./table-sort";
 mountRequiredMarkers();

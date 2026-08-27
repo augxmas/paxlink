@@ -1,6 +1,10 @@
 import "./parish-suggestions";
 import "./parish-memorials";
 import "./parish-legion";
+import "./table-sort";
+
+// Reconcile independently mounted feature panels after every main-tab click.
+document.addEventListener("click",event=>{const tab=(event.target as Element).closest<HTMLButtonElement>("#parish-dashboard [data-main-view]");if(!tab)return;window.setTimeout(()=>{const view=tab.dataset.mainView??"parish",panels:Record<string,string>={parishioners:"#parishioner-management",legion:"#legion-management",sharing:"#sharing-management",information:"#information-management",prayer:"#prayer-management",settings:"#settings-management"};for(const [name,selector] of Object.entries(panels)){const panel=document.querySelector<HTMLElement>(selector);if(panel)panel.hidden=view!==name}document.querySelectorAll<HTMLButtonElement>("#parish-dashboard [data-main-view]").forEach(button=>button.classList.toggle("active",button===tab));const parishSubnav=document.querySelector<HTMLElement>("#parish-dashboard .parish-subnav");if(parishSubnav)parishSubnav.hidden=view!=="parish";if(view!=="parish"){["#parish-profile-form","#priest-management","#history-management","#patron-saint-management","#administrative-guide-management","#video-management","#notice-management","#schedule-management"].forEach(selector=>{const panel=document.querySelector<HTMLElement>(selector);if(panel)panel.hidden=true})}},0)});
 declare global { interface Window { daum?: { Postcode: new (options:{oncomplete:(data:{zonecode:string;roadAddress:string;jibunAddress:string})=>void})=>{open:()=>void} } } }
 type FieldName="managerName"|"name"|"parishCode"|"phone"|"postalCode"|"address"|"addressDetail"|"diocese"|"district"|"jurisdiction"|"officePhone"|"fax"|"homepage";
 type Profile={id:number;manager_name:string|null;manager_email:string;name:string;parish_code:string;phone:string;postal_code:string;address:string;address_detail:string;diocese:string;district:string;jurisdiction:string;office_phone:string;fax:string|null;homepage:string|null;approval_status:string;modified_at:string|null};

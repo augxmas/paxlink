@@ -3312,6 +3312,48 @@ body.member-gateway-open{overflow:hidden}.member-faith-gateway{position:fixed;z-
   document.head.insertAdjacentHTML("beforeend", "<style>.member-dictionary-modal .member-modal-box{display:flex;width:min(94vw,850px);max-height:88vh;flex-direction:column;overflow:hidden;text-align:left}.member-dictionary-modal h3{flex:none;margin:0;padding:18px;background:var(--green);color:#fff;text-align:center}.member-dictionary-body{padding:18px;overflow:auto}.member-dictionary-search{display:grid;grid-template-columns:170px minmax(180px,1fr) auto auto;gap:8px;margin-bottom:10px}.member-dictionary-search select,.member-dictionary-search input{height:42px;padding:0 11px;border:1px solid var(--line);border-radius:8px;background:#fff;font:inherit}.member-dictionary-search button{height:42px;padding:0 18px;border-radius:8px;white-space:nowrap}.member-dictionary-search [data-dictionary-search]{border:0}.member-dictionary-body>[data-result-count]{display:block;margin:10px 0;color:var(--muted)}.member-dictionary-body [data-dictionary-results]{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.member-dictionary-body article{padding:15px;border:1px solid var(--line);border-radius:10px;background:#fbfdfc}.member-dictionary-body article header{display:flex;align-items:baseline;gap:8px}.member-dictionary-body h4{margin:0;font-size:15px}.member-dictionary-body article header small{color:var(--muted)}.member-dictionary-body article>div{display:flex;flex-wrap:wrap;gap:5px;margin:10px 0}.member-dictionary-body article>div span{padding:4px 8px;border-radius:11px;background:#eaf7f1;color:var(--green);font-size:9px}.member-dictionary-body article>p{line-height:1.65}.member-dictionary-body details{padding-top:9px;border-top:1px solid var(--line)}.member-dictionary-body summary{color:var(--green);font-weight:700;cursor:pointer}.member-dictionary-body details section{padding:10px 0;line-height:1.7;white-space:pre-wrap}.member-dictionary-body details a{color:var(--green);font-size:9px}.member-dictionary-empty{grid-column:1/-1;padding:50px;text-align:center;color:var(--muted)}.member-dictionary-modal .member-modal-box>footer{display:flex;justify-content:center;padding:13px;border-top:1px solid var(--line)}@media(max-width:620px){.member-dictionary-body{padding:13px}.member-dictionary-search{grid-template-columns:1fr 1fr}.member-dictionary-search select,.member-dictionary-search input{grid-column:1/-1}.member-dictionary-search button{height:40px}.member-dictionary-body [data-dictionary-results]{grid-template-columns:1fr}.member-dictionary-modal .member-modal-box{width:96vw;max-height:92vh}}</style>");
   document.head.insertAdjacentHTML("beforeend", "<style>.member-mobile-menu [data-open-dictionary]{display:flex;align-items:center}.member-dictionary-menu-icon{display:grid;width:25px;height:25px;flex:0 0 25px;margin-right:10px;place-items:center;border-radius:8px;background:#e1f5ee;color:var(--green);font-size:12px;font-weight:800}@media(max-width:600px){.member-mobile-menu [data-open-dictionary]{height:38px;min-height:38px;padding:0 10px;font-size:11px}.member-dictionary-menu-icon{width:21px;height:21px;flex-basis:21px;margin-right:8px;border-radius:7px;font-size:10px}}</style>");
 
+  // src/client/table-sort.ts
+  function sortableValue(cell) {
+    const raw = (cell.dataset.sortValue ?? cell.textContent ?? "").replace(/\s+/g, " ").trim();
+    if (!raw) return { kind: 0, value: "" };
+    const date = Date.parse(raw.replace(/\./g, "-").replace(/오전\s*/, "AM ").replace(/오후\s*/, "PM "));
+    if (/\d{4}[.\-/]\s*\d{1,2}[.\-/]\s*\d{1,2}/.test(raw) && Number.isFinite(date)) return { kind: 2, value: date };
+    const numeric = raw.replace(/,/g, "").match(/^[-+]?\d+(?:\.\d+)?(?:\s*(?:건|개|명|회|원|%))?$/);
+    if (numeric) return { kind: 2, value: Number.parseFloat(numeric[0]) };
+    return { kind: 1, value: raw };
+  }
+  function compareCells(left, right) {
+    const a = left ? sortableValue(left) : { kind: 0, value: "" }, b = right ? sortableValue(right) : { kind: 0, value: "" };
+    if (a.kind !== b.kind) return a.kind - b.kind;
+    if (typeof a.value === "number" && typeof b.value === "number") return a.value - b.value;
+    return String(a.value).localeCompare(String(b.value), "ko", { numeric: true, sensitivity: "base" });
+  }
+  document.addEventListener("click", (event) => {
+    const target = event.target, header = target.closest("table thead th");
+    if (!header || header.colSpan > 1 || header.dataset.noSort !== void 0) return;
+    if (target.closest("input,select,textarea,a") || header.dataset.sort || header.querySelector("[data-sort]")) return;
+    const table = header.closest("table");
+    if (!table) return;
+    const index = [...header.parentElement.children].indexOf(header);
+    if (table.matches(".shrine-grid") && index < 7) return;
+    const body = table.tBodies[0];
+    if (!body || body.rows.length < 2) return;
+    const direction = header.getAttribute("aria-sort") === "ascending" ? "descending" : "ascending";
+    table.querySelectorAll("thead th").forEach((cell) => {
+      cell.removeAttribute("aria-sort");
+      cell.classList.remove("table-sort-asc", "table-sort-desc");
+    });
+    header.setAttribute("aria-sort", direction);
+    header.classList.add(direction === "ascending" ? "table-sort-asc" : "table-sort-desc");
+    const rows = [...body.rows].map((row, position) => ({ row, position }));
+    rows.sort((a, b) => {
+      const result = compareCells(a.row.cells[index], b.row.cells[index]);
+      return (result || a.position - b.position) * (direction === "ascending" ? 1 : -1);
+    });
+    rows.forEach((item) => body.append(item.row));
+  });
+  document.head.insertAdjacentHTML("beforeend", '<style>table thead th:not([data-no-sort]){cursor:pointer;user-select:none}table thead th.table-sort-asc:after,table thead th.table-sort-desc:after{display:inline-block;margin-left:6px;color:currentColor;font-size:9px}table thead th.table-sort-asc:after{content:"\u25B2"}table thead th.table-sort-desc:after{content:"\u25BC"}</style>');
+
   // src/client/required-markers.ts
   var REQUIRED_MARKER_SELECTOR = "label > i, legend > i, label > span > i";
   function normalizeRequiredMarkers(root = document) {
@@ -6264,8 +6306,14 @@ body.member-gateway-open{overflow:hidden}.member-faith-gateway{position:fixed;z-
   function simplifyCatacombRegistrationModal() {
     const modal2 = document.querySelector(".registration-form-modal"), form = modal2?.querySelector("#catacomb-form");
     if (!modal2 || !form || modal2.dataset.catacombSimplified) return;
-    const submit2 = form.querySelector('header button[type="submit"]'), footer = modal2.querySelector(":scope>.member-modal-box>footer"), close = footer?.querySelector('button[type="button"]'), title = form.querySelector("#catacomb-title"), content = form.querySelector("#catacomb-content");
-    if (!submit2 || !footer || !close || !title || !content) return;
+    const footer = modal2.querySelector(":scope>.member-modal-box>footer"), close = footer?.querySelector('button[type="button"]'), title = form.querySelector("#catacomb-title"), content = form.querySelector("#catacomb-content");
+    if (!footer || !close || !title || !content) return;
+    let submit2 = form.querySelector('header button[type="submit"]') ?? footer.querySelector(".catacomb-modal-submit");
+    if (!submit2) {
+      submit2 = document.createElement("button");
+      submit2.type = "submit";
+      submit2.className = "green-button";
+    }
     modal2.dataset.catacombSimplified = "true";
     form.querySelector(":scope>header")?.remove();
     submit2.classList.add("catacomb-modal-submit");

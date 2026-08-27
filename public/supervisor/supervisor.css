@@ -33,9 +33,34 @@
 /* Compact desktop chrome: reserve more viewport height for data */
 @media(min-width:901px){
   .workspace{padding-top:60px;padding-bottom:36px}
-  .supervisor-tabs{height:46px;margin-bottom:12px}
+  .supervisor-tabs{height:46px;margin-top:10px;margin-bottom:12px}
   .supervisor-tab{height:45px}
   .topbar{margin-bottom:14px}
   .summary-grid{margin-top:14px;margin-bottom:14px}
   .content-card{min-height:calc(100vh - 190px)}
+}
+
+/* Desktop fixed frame: keep tab controls and grid headers visible. */
+@media(min-width:901px){
+  body:has(#supervisor-app:not([hidden])){overflow:hidden}
+  #supervisor-app{height:100vh;overflow:hidden}
+  #supervisor-app .workspace{display:flex;height:100vh;min-height:0;flex-direction:column;overflow:hidden}
+  #supervisor-app .supervisor-tabs,
+  #supervisor-app .topbar,
+  #supervisor-app .summary-grid{flex:0 0 auto}
+  #supervisor-app>.workspace>.content-card{display:flex;min-height:0;flex:1 1 auto;flex-direction:column}
+  #supervisor-app>.workspace>.content-card>.card-toolbar{flex:0 0 auto}
+  #supervisor-app>.workspace>.content-card>.table-wrap{min-height:0;flex:1 1 auto;overflow:auto}
+  #supervisor-app .table-wrap thead{position:sticky;top:0;z-index:3;box-shadow:0 1px 0 var(--line)}
+  #supervisor-app .table-wrap thead th{background:#f8fafc}
+  #supervisor-shrine-view:not([hidden]),
+  #supervisor-dictionary-view:not([hidden]){display:flex;min-height:0;flex:1 1 auto;flex-direction:column;overflow:hidden}
+  #supervisor-shrine-view>.supervisor-shrine-header,
+  #supervisor-dictionary-view>.dict-head{flex:0 0 auto}
+  #supervisor-shrine-view>.content-card,
+  #supervisor-dictionary-view>.content-card{display:flex;min-height:0;flex:1 1 auto;flex-direction:column}
+  #supervisor-shrine-view>.content-card>.card-toolbar,
+  #supervisor-dictionary-view>.content-card>.card-toolbar{flex:0 0 auto}
+  #supervisor-shrine-view>.content-card>.table-wrap{min-height:0;flex:1 1 auto;overflow:auto}
+  #supervisor-dictionary-view .dict-list{min-height:0;flex:1 1 auto;overflow:auto}
 }
