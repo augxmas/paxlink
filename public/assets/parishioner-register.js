@@ -64,6 +64,18 @@
     });
   }
   picker();
+  var hostParishRegistration = false;
+  var isHostParishRegistration = () => hostParishRegistration || search.readOnly || location.hostname.toLowerCase().endsWith(".paxlink.kr");
+  void fetch("/api/parish-context", { headers: { Accept: "application/json" } }).then(async (response) => {
+    if (!response.ok) return;
+    const parish = await response.json();
+    hostParishRegistration = true;
+    parishId.value = String(parish.id);
+    search.value = `${parish.name}${parish.diocese ? ` \xB7 ${parish.diocese}` : ""}`;
+    search.readOnly = true;
+    search.setAttribute("aria-readonly", "true");
+    results.hidden = true;
+  }).catch(() => void 0);
   var agreeAll = document.querySelector("#agree-all");
   var codeInput = document.querySelector("#join-code");
   agreeAll.onchange = (event) => {
@@ -207,6 +219,31 @@
     fields.address.value = data.roadAddress || data.jibunAddress;
     fields.addressDetail.focus();
   } }).open());
+  function showHostRegistrationComplete() {
+    return new Promise((resolve) => {
+      const layer = document.createElement("div");
+      layer.className = "member-modal host-registration-complete";
+      layer.innerHTML = `<section class="host-registration-complete-box" role="dialog" aria-modal="true" aria-labelledby="host-registration-complete-title"><div class="host-registration-complete-icon" aria-hidden="true">\u2713</div><small>WELCOME TO OUR PARISH</small><h2 id="host-registration-complete-title">\uD68C\uC6D0\uAC00\uC785\uC774 \uC644\uB8CC\uB418\uC5C8\uC2B5\uB2C8\uB2E4</h2><p><strong>${escapeRegistrationHtml(nameInput.value.trim())}</strong>\uB2D8, \uD658\uC601\uD569\uB2C8\uB2E4.<br>\uC774\uC81C \uC131\uB2F9\uC758 \uC2E0\uC559\uC0DD\uD65C \uC11C\uBE44\uC2A4\uB97C \uC774\uC6A9\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4.</p><button class="green-button" type="button">\uD655\uC778</button></section>`;
+      document.body.append(layer);
+      const button = layer.querySelector("button");
+      button.focus();
+      button.onclick = () => {
+        layer.remove();
+        resolve();
+      };
+      layer.onkeydown = (event) => {
+        if (event.key === "Escape") {
+          event.preventDefault();
+          button.click();
+        }
+      };
+    });
+  }
+  function escapeRegistrationHtml(value) {
+    const element = document.createElement("span");
+    element.textContent = value;
+    return element.innerHTML;
+  }
   var saveConfirmed = false;
   form.addEventListener("submit", (event) => {
     if (saveConfirmed) {
@@ -234,8 +271,10 @@
       if (!response.ok) throw new Error(data.message);
       const preferences = await fetch("/api/parishioners/preferences", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ parishId: Number(parishId.value), email: email.value, token, pushOptIn: pushConsent.checked, emailOptIn: emailConsent.checked, gender: registrationGender.value }) }), preferenceData = await preferences.json();
       if (!preferences.ok) throw new Error(preferenceData.message);
-      alert(data.message);
-      location.href = "/parishioner";
+      const hostRegistration = isHostParishRegistration();
+      if (hostRegistration) await showHostRegistrationComplete();
+      else alert(data.message);
+      location.href = hostRegistration ? "/" : "/parishioner";
     } catch (error) {
       msg(error.message, true);
     }
@@ -253,5 +292,6 @@
   var memberDetailsHeading = document.querySelector("#join-details>h2");
   memberDetailsHeading.append(memberLockedNotice);
   document.head.insertAdjacentHTML("beforeend", "<style>#join-details>h2 .locked-notice{position:static;inset:auto;margin-left:4px;color:var(--muted);font-size:11px;font-weight:500;text-align:left}@media(max-width:600px){#join-details>h2{flex-wrap:wrap}#join-details>h2 .locked-notice{flex:1 0 auto;margin-left:0}}</style>");
+  document.head.insertAdjacentHTML("beforeend", "<style>.host-registration-complete{z-index:2200;background:rgba(8,31,24,.66);backdrop-filter:blur(5px)}.host-registration-complete-box{box-sizing:border-box;width:min(92vw,430px);padding:34px 30px 28px;border:1px solid #d9e6df;border-radius:22px;background:#fff;color:#263c35;text-align:center;box-shadow:0 28px 80px rgba(4,35,25,.3);animation:host-registration-pop .22s ease-out}.host-registration-complete-icon{display:grid;width:66px;height:66px;margin:0 auto 17px;place-items:center;border-radius:50%;background:linear-gradient(145deg,#17664f,#2f9274);color:#fff;font-size:32px;font-weight:900;box-shadow:0 10px 25px rgba(23,102,79,.25)}.host-registration-complete-box>small{color:#a37a22;font-size:9px;font-weight:900;letter-spacing:.18em}.host-registration-complete-box h2{margin:8px 0 12px;font-size:23px;letter-spacing:-.04em}.host-registration-complete-box p{margin:0;color:#687970;font-size:12px;line-height:1.8}.host-registration-complete-box p strong{color:#17664f}.host-registration-complete-box button{width:150px;height:46px;margin-top:24px}.host-registration-complete-box button:focus-visible{outline:3px solid rgba(23,102,79,.25);outline-offset:3px}@keyframes host-registration-pop{from{opacity:0;transform:translateY(12px) scale(.97)}to{opacity:1;transform:none}}@media(max-width:480px){.host-registration-complete-box{padding:29px 20px 23px}.host-registration-complete-box h2{font-size:20px}.host-registration-complete-box button{width:100%}}</style>");
   mountRequiredMarkers();
 })();

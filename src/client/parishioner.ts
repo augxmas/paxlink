@@ -308,6 +308,7 @@ document.head.insertAdjacentHTML("beforeend",'<style>.member-notices>header{gap:
 document.head.insertAdjacentHTML("beforeend",'<style>.member-notice .member-notice-detail{width:auto!important;height:28px!important;margin:10px 0 0 auto!important;padding:0 11px!important;border-radius:8px!important;font-size:9px!important;line-height:1;white-space:nowrap}@media(max-width:600px){.member-notice .member-notice-detail{height:26px!important;padding:0 9px!important}}</style>');
 import {startSessionCountdown} from "./session-countdown";
 import "./parishioner-legion";
+document.addEventListener("member:open-profile",()=>void openMemberProfileForm());
 import "./parishioner-gateway";
 import "./pwa-install";
 if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("/parish-sw.js",{scope:"/"}).catch(()=>undefined));
