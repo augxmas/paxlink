@@ -1320,7 +1320,6 @@ async function sendCode(email: string, code: string, purpose: string) {
       secure: process.env.SMTP_SECURE === "true" || Number(process.env.SMTP_PORT) === 465,
       auth: process.env.SMTP_USER ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASSWORD ?? process.env.SMTP_PASS } : undefined,
       requireTLS: process.env.SMTP_REQUIRE_TLS === "true",
-      tls: process.env.SMTP_HOST ? { servername: process.env.SMTP_HOST } : undefined,
       connectionTimeout: 10_000,
       greetingTimeout: 10_000,
       socketTimeout: 15_000,
