@@ -3,12 +3,21 @@
 
 START TRANSACTION;
 
-ALTER TABLE parishes
-  ADD COLUMN IF NOT EXISTS icon_type VARCHAR(100) NULL AFTER homepage,
-  ADD COLUMN IF NOT EXISTS icon_data MEDIUMBLOB NULL AFTER icon_type;
-
-ALTER TABLE parish_schedules
-  ADD COLUMN IF NOT EXISTS mass_order JSON NULL AFTER schedule_type;
+SET @sql := IF(
+  (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='parishes' AND COLUMN_NAME='icon_type')=0,
+  'ALTER TABLE parishes ADD COLUMN icon_type VARCHAR(100) NULL AFTER homepage',
+  'SELECT 1'
+); PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+SET @sql := IF(
+  (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='parishes' AND COLUMN_NAME='icon_data')=0,
+  'ALTER TABLE parishes ADD COLUMN icon_data MEDIUMBLOB NULL AFTER icon_type',
+  'SELECT 1'
+); PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+SET @sql := IF(
+  (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='parish_schedules' AND COLUMN_NAME='mass_order')=0,
+  'ALTER TABLE parish_schedules ADD COLUMN mass_order JSON NULL AFTER schedule_type',
+  'SELECT 1'
+); PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 UPDATE parishes
 SET parish_code = 'hopyeongdong'
