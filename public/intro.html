@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101d43">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="apple-touch-icon" sizes="192x192" href="/pwa-icon/192.png">
+  <title>호평동 성당 · 빛의 방</title>
+  <style>
+    :root {
+      --navy: #101d43;
+      --navy-light: #1d3264;
+      --gold: #e8c967;
+      --gold-soft: #aa995f;
+      --cream: #fff9df;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { min-height: 100%; background: var(--navy); }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      overflow-x: hidden;
+      color: var(--cream);
+      font-family: "Noto Serif KR", "Nanum Myeongjo", Georgia, serif;
+      background:
+        radial-gradient(circle at 50% 58%, rgba(75, 104, 168, .24), transparent 28rem),
+        linear-gradient(155deg, #0c1738 0%, var(--navy-light) 52%, #0d1838 100%);
+    }
+
+    body::before,
+    body::after {
+      position: fixed;
+      z-index: 0;
+      width: 48rem;
+      height: 48rem;
+      border: 2px solid rgba(221, 200, 113, .10);
+      border-radius: 50%;
+      content: "";
+      pointer-events: none;
+    }
+
+    body::before { top: -27rem; right: -22rem; }
+    body::after { bottom: -35rem; left: -30rem; }
+
+    .intro {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      width: min(100%, 760px);
+      min-height: 100vh;
+      margin: 0 auto;
+      padding: clamp(38px, 7vh, 74px) 24px 38px;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    .parish-photo {
+      position: relative;
+      width: clamp(164px, 30vw, 246px);
+      aspect-ratio: 1;
+      overflow: hidden;
+      border: 5px solid rgba(194, 174, 101, .68);
+      border-radius: 50%;
+      box-shadow: 0 0 42px rgba(239, 218, 132, .22), 0 20px 50px rgba(0, 0, 0, .32);
+    }
+
+    .parish-photo::after {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, transparent 55%, rgba(3, 9, 25, .48));
+      content: "";
+    }
+
+    .parish-photo img { width: 100%; height: 100%; object-fit: cover; object-position: center; }
+
+    .eyebrow {
+      margin: 32px 0 0;
+      color: var(--gold-soft);
+      font-family: Georgia, serif;
+      font-size: clamp(13px, 2.5vw, 18px);
+      letter-spacing: .42em;
+    }
+
+    h1 {
+      margin: 14px 0 6px;
+      font-size: clamp(34px, 7vw, 54px);
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-shadow: 0 4px 18px rgba(0, 0, 0, .36);
+    }
+
+    .welcome { margin: 6px 0 0; color: rgba(255, 249, 223, .67); font-size: 13px; letter-spacing: .08em; }
+
+    .light-room {
+      position: relative;
+      display: grid;
+      width: clamp(290px, 68vw, 430px);
+      aspect-ratio: 1;
+      margin-top: clamp(38px, 7vh, 68px);
+      place-items: center;
+    }
+
+    .orbit {
+      position: absolute;
+      inset: 9%;
+      border: 1px dashed rgba(216, 195, 112, .22);
+      border-radius: 50%;
+      animation: orbit 36s linear infinite;
+    }
+
+    .orbit::before,
+    .orbit::after {
+      position: absolute;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--gold);
+      box-shadow: 0 0 12px var(--gold);
+      content: "";
+    }
+
+    .orbit::before { top: 9%; left: 18%; }
+    .orbit::after { right: 5%; bottom: 27%; }
+
+    .core {
+      position: relative;
+      z-index: 2;
+      display: grid;
+      width: 63%;
+      aspect-ratio: 1;
+      place-items: center;
+      border: 5px solid rgba(205, 184, 105, .68);
+      border-radius: 50%;
+      background:
+        radial-gradient(circle, rgba(255, 242, 156, .92) 0 2%, rgba(242, 189, 91, .38) 18%, rgba(124, 85, 130, .5) 47%, rgba(14, 35, 80, .9) 72%);
+      box-shadow: 0 0 45px rgba(237, 198, 99, .23), inset 0 0 34px rgba(255, 224, 125, .18);
+      color: inherit;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    .star-glow {
+      position: absolute;
+      width: 82%;
+      aspect-ratio: 1;
+      border-radius: 50%;
+      background: repeating-conic-gradient(from 0deg, rgba(255, 233, 139, .22) 0 3deg, transparent 3deg 15deg);
+      filter: blur(2px);
+      animation: breathe 4s ease-in-out infinite;
+    }
+
+    .star {
+      position: relative;
+      width: 48%;
+      aspect-ratio: 1;
+      background: linear-gradient(145deg, #fffbd2 8%, #ffe36f 44%, #ee984e 88%);
+      clip-path: polygon(50% 0, 61% 35%, 98% 35%, 68% 56%, 79% 94%, 50% 72%, 21% 94%, 32% 56%, 2% 35%, 39% 35%);
+      filter: drop-shadow(0 0 10px #fff2a1) drop-shadow(0 0 26px #f2b94f);
+    }
+
+    .core-title {
+      position: absolute;
+      bottom: 12%;
+      color: #ffdf63;
+      font-size: clamp(19px, 4vw, 28px);
+      font-weight: 800;
+      letter-spacing: .16em;
+      text-shadow: 0 0 12px rgba(255, 210, 76, .62);
+    }
+
+    .spark { position: absolute; z-index: 3; color: #ffe76e; font-size: 24px; text-shadow: 0 0 10px #ffdc55; }
+    .spark.one { top: 19%; left: 19%; }
+    .spark.two { right: 18%; bottom: 24%; font-size: 18px; }
+
+    .menu-button {
+      position: absolute;
+      z-index: 4;
+      display: flex;
+      width: clamp(118px, 29vw, 174px);
+      aspect-ratio: 1;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 7px;
+      border: 3px solid rgba(196, 178, 106, .56);
+      border-radius: 50%;
+      color: var(--gold);
+      background: rgba(23, 43, 87, .88);
+      box-shadow: 0 12px 26px rgba(1, 7, 23, .28), inset 0 0 24px rgba(255, 228, 132, .035);
+      font: inherit;
+      cursor: pointer;
+      text-decoration: none;
+      transition: transform .25s ease, border-color .25s ease, background .25s ease;
+    }
+
+    .menu-button:hover { transform: translateY(-4px); border-color: var(--gold); background: rgba(34, 61, 115, .94); }
+    .menu-button.prayer { left: -3%; bottom: 2%; }
+    .menu-button.gospel { right: -3%; bottom: 2%; }
+    .menu-button .icon { font-size: clamp(34px, 7vw, 50px); filter: drop-shadow(0 4px 7px rgba(0, 0, 0, .3)); }
+    .menu-button strong { font-size: clamp(15px, 3.5vw, 23px); letter-spacing: .06em; }
+    .menu-button small { color: rgba(255, 249, 223, .58); font-family: sans-serif; font-size: 9px; letter-spacing: .05em; }
+
+    .hint { margin: 26px 0 0; color: rgba(198, 180, 108, .52); font-size: 12px; letter-spacing: .08em; }
+    .credit { margin: auto 0 0; padding-top: 44px; color: var(--gold); font-family: Georgia, serif; font-size: clamp(10px, 2vw, 13px); font-weight: 700; letter-spacing: .18em; line-height: 1.7; text-transform: uppercase; }
+    .credit span { display: block; }
+
+    @keyframes orbit { to { transform: rotate(360deg); } }
+    @keyframes breathe { 50% { transform: scale(1.08); opacity: .74; } }
+
+    @media (max-width: 430px) {
+      .intro { padding-inline: 14px; }
+      .light-room { width: min(94vw, 390px); }
+      .menu-button.prayer { left: 0; }
+      .menu-button.gospel { right: 0; }
+      .menu-button small { display: none; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .orbit, .star-glow { animation: none; }
+    }
+  </style>
+</head>
+<body>
+  <main class="intro">
+    <div class="parish-photo" aria-hidden="true">
+      <img src="/assets/intro-sanctuary.png" alt="호평동 성당 제대와 십자가">
+    </div>
+
+    <p class="eyebrow">CATHOLIC PARISH</p>
+    <h1>호평동 성당</h1>
+    <p class="welcome">찬미 예수님, 빛으로 이어지는 우리 공동체</p>
+
+    <section class="light-room" aria-label="빛의 방 메뉴">
+      <div class="orbit" aria-hidden="true"></div>
+
+      <a class="menu-button prayer" href="/parishioner?open=prayer-dream" aria-label="기도드림 열기">
+        <span class="icon" aria-hidden="true">🙏</span>
+        <strong>기도드림</strong>
+        <small>PRAYER DREAM</small>
+      </a>
+
+      <a class="core" href="/parishioner?open=memorial" aria-label="추모의 공간 열기">
+        <div class="star-glow" aria-hidden="true"></div>
+        <span class="star" aria-hidden="true"></span>
+        <span class="spark one" aria-hidden="true">✦</span>
+        <span class="spark two" aria-hidden="true">✦</span>
+        <strong class="core-title">빛의 방</strong>
+      </a>
+
+      <a class="menu-button gospel" href="/parishioner?open=gospel-note" aria-label="복음노트 열기">
+        <span class="icon" aria-hidden="true">📖</span>
+        <strong>복음노트</strong>
+        <small>GOSPEL NOTE</small>
+      </a>
+    </section>
+
+    <p class="hint">빛의 방에서 마음을 모아보세요</p>
+    <footer class="credit">
+      <span>MADE BY OUR LADY OF VICTORY PR.</span>
+      <span>PARISH-ID CATHOLIC CHURCH</span>
+    </footer>
+  </main>
+</body>
+<script>
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("/parish-sw.js",{scope:"/"}).catch(()=>undefined));
+(()=>{const mobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||matchMedia("(pointer:coarse)").matches,standalone=matchMedia("(display-mode:standalone)").matches||navigator.standalone;if(!mobile||standalone)return;let promptEvent=null;const show=()=>{if(document.querySelector(".parish-pwa-prompt"))return;const box=document.createElement("div");box.className="parish-pwa-prompt";box.innerHTML='<img src="/pwa-icon/192.png" alt=""><div><strong>성당 앱을 설치하시겠습니까?</strong><small>홈 화면에서 바로 이용할 수 있습니다.</small></div><button type="button" data-install>설치</button><button type="button" data-close aria-label="닫기">×</button>';document.body.append(box);box.querySelector("[data-close]").onclick=()=>box.remove();box.querySelector("[data-install]").onclick=async()=>{if(promptEvent){await promptEvent.prompt();await promptEvent.userChoice;box.remove()}else if(/iPhone|iPad|iPod/i.test(navigator.userAgent))alert("Safari의 공유 버튼을 누른 후 ‘홈 화면에 추가’를 선택해 주세요.");else alert("브라우저 메뉴에서 ‘앱 설치’ 또는 ‘홈 화면에 추가’를 선택해 주세요.")}};window.addEventListener("beforeinstallprompt",event=>{event.preventDefault();promptEvent=event;show()});window.addEventListener("load",()=>setTimeout(show,1200))})();
+</script>
+<style>.parish-pwa-prompt{position:fixed;z-index:9999;right:14px;bottom:14px;left:14px;display:grid;grid-template-columns:48px 1fr auto auto;align-items:center;gap:11px;max-width:520px;margin:auto;padding:12px;border:1px solid rgba(232,201,103,.55);border-radius:16px;background:rgba(8,22,52,.96);color:#fff;font-family:system-ui,sans-serif;box-shadow:0 14px 38px rgba(0,0,0,.38);backdrop-filter:blur(10px)}.parish-pwa-prompt img{width:48px;height:48px;border-radius:50%;object-fit:cover}.parish-pwa-prompt strong,.parish-pwa-prompt small{display:block}.parish-pwa-prompt strong{font-size:13px}.parish-pwa-prompt small{margin-top:4px;color:#bdc8df;font-size:10px}.parish-pwa-prompt button{padding:9px 12px;border:0;border-radius:8px;background:#e8c967;color:#17244a;font-weight:800;cursor:pointer}.parish-pwa-prompt [data-close]{padding:5px;background:transparent;color:#cbd3e4;font-size:20px}@media(max-width:430px){.parish-pwa-prompt{grid-template-columns:42px 1fr auto}.parish-pwa-prompt img{width:42px;height:42px}.parish-pwa-prompt [data-close]{position:absolute;top:-7px;right:-2px}}</style>
+</html>

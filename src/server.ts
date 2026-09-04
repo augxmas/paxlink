@@ -1,10 +1,12 @@
 import crypto from "node:crypto";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import dotenv from "dotenv";
 import express from "express";
 import mysql, { RowDataPacket } from "mysql2/promise";
 import nodemailer from "nodemailer";
+import sharp from "sharp";
 
 dotenv.config();
 
@@ -134,6 +136,8 @@ async function ensureSchema() {
     office_phone: "VARCHAR(13) NULL",
     fax: "VARCHAR(13) NULL",
     homepage: "VARCHAR(500) NULL",
+    icon_type: "VARCHAR(100) NULL",
+    icon_data: "MEDIUMBLOB NULL",
     approval_requested_at: "DATETIME NULL DEFAULT CURRENT_TIMESTAMP",
     approval_status: "VARCHAR(20) NOT NULL DEFAULT 'pending'",
     cancellation_reason: "VARCHAR(1000) NULL",
@@ -289,7 +293,7 @@ async function ensureSchema() {
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY, parish_id BIGINT UNSIGNED NOT NULL,
     schedule_date DATE NOT NULL, start_time TIME NULL, end_time TIME NULL,
     category ENUM('mass','sacrament','devotion','liturgical','other') NOT NULL DEFAULT 'other',
-    schedule_type VARCHAR(50) NULL, title VARCHAR(200) NOT NULL, location VARCHAR(300) NULL, content VARCHAR(5000) NULL, source_key VARCHAR(255) NULL,
+    schedule_type VARCHAR(50) NULL, mass_order JSON NULL, title VARCHAR(200) NOT NULL, location VARCHAR(300) NULL, content VARCHAR(5000) NULL, source_key VARCHAR(255) NULL,
     attachment_name VARCHAR(500) NULL, attachment_type VARCHAR(200) NULL, attachment_data MEDIUMBLOB NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     KEY idx_parish_schedule (parish_id,schedule_date,start_time),
@@ -299,6 +303,7 @@ async function ensureSchema() {
   await pool.query("UPDATE parish_schedules SET category='other' WHERE category='meeting'");
   await pool.query("ALTER TABLE parish_schedules MODIFY category ENUM('mass','sacrament','devotion','liturgical','other') NOT NULL DEFAULT 'other'");
   if(!scheduleColumns.some(row=>String(row.COLUMN_NAME)==="schedule_type"))await pool.query("ALTER TABLE parish_schedules ADD COLUMN schedule_type VARCHAR(50) NULL AFTER category");
+  if(!scheduleColumns.some(row=>String(row.COLUMN_NAME)==="mass_order"))await pool.query("ALTER TABLE parish_schedules ADD COLUMN mass_order JSON NULL AFTER schedule_type");
   if(!scheduleColumns.some(row=>String(row.COLUMN_NAME)==="location"))await pool.query("ALTER TABLE parish_schedules ADD COLUMN location VARCHAR(300) NULL AFTER title");
   if(!scheduleColumns.some(row=>String(row.COLUMN_NAME)==="source_key"))await pool.query("ALTER TABLE parish_schedules ADD COLUMN source_key VARCHAR(255) NULL AFTER content");
   if(!scheduleColumns.some(row=>String(row.COLUMN_NAME)==="attachment_name"))await pool.query("ALTER TABLE parish_schedules ADD COLUMN attachment_name VARCHAR(500) NULL AFTER source_key");
@@ -952,8 +957,37 @@ async function ensureSchema() {
 
 const app = express();
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const parishSitesRoot=path.join(root,"public","parishes");
+const parishBaseDomain=String(process.env.PARISH_BASE_DOMAIN??"").trim().toLowerCase().replace(/^\.+|\.+$/g,"");
+function parishCodeFromHost(hostname:string){
+  const host=hostname.toLowerCase().replace(/\.$/,"");
+  const suffix=parishBaseDomain?`.${parishBaseDomain}`:".localhost";
+  if(!host.endsWith(suffix))return null;
+  const code=host.slice(0,-suffix.length);
+  return parishCodePattern.test(code)&&!code.includes(".")?code:null;
+}
+async function provisionParishSite(id:number,code:string,name:string){
+  if(!parishCodePattern.test(code))throw new Error("유효하지 않은 성당 ID로 사이트를 생성할 수 없습니다.");
+  const directory=path.join(parishSitesRoot,code.toLowerCase());
+  if(path.dirname(directory)!==parishSitesRoot)throw new Error("성당 사이트 경로가 올바르지 않습니다.");
+  await mkdir(directory,{recursive:true});
+  const template=await readFile(path.join(root,"public","intro.html"),"utf8");
+  const html=template.replaceAll("호평동",name).replace("PARISH-ID",code.toUpperCase()).replace('/assets/intro-sanctuary.png',`/api/parishes/${id}/icon`);
+  await writeFile(path.join(directory,"index.html"),html,"utf8");
+}
 app.set("trust proxy", 1);
 app.use(express.json({ limit: "15mb" }));
+app.get("/manifest.webmanifest",async(req,res,next)=>{try{
+  const code=parishCodeFromHost(req.hostname);
+  if(!code)return res.sendFile(path.join(root,"public/parishioner/manifest.webmanifest"));
+  const [rows]=await pool.query<RowDataPacket[]>("SELECT id,name,parish_code AS parishCode FROM parishes WHERE LOWER(parish_code)=? AND approval_status='approved' LIMIT 1",[code]);
+  if(!rows.length)return res.status(404).end();
+  const parish=rows[0]!,name=String(parish.name),icons=[{src:"/pwa-icon/192.png",sizes:"192x192",type:"image/png",purpose:"any"},{src:"/pwa-icon/512.png",sizes:"512x512",type:"image/png",purpose:"any"}];
+  res.type("application/manifest+json");res.setHeader("Cache-Control","no-cache");res.json({id:"/",name:`${name} 성당`,short_name:name,description:`${name} 성당 신앙 공동체`,lang:"ko-KR",start_url:"/?source=pwa",scope:"/",display:"standalone",orientation:"portrait-primary",background_color:"#101d43",theme_color:"#101d43",categories:["lifestyle","social"],icons,shortcuts:[{name:"기도드림",url:"/parishioner?open=prayer-dream",icons:[icons[0]]},{name:"추모의 공간",url:"/parishioner?open=memorial",icons:[icons[0]]},{name:"복음노트",url:"/parishioner?open=gospel-note",icons:[icons[0]]}]});
+}catch(error){next(error)}});
+app.get("/pwa-icon",async(req,res,next)=>{try{const code=parishCodeFromHost(req.hostname);if(!code)return res.sendFile(path.join(root,"public/assets/paxlink-pwa-192.png"));const [rows]=await pool.query<RowDataPacket[]>("SELECT icon_type AS type,icon_data AS data FROM parishes WHERE LOWER(parish_code)=? AND approval_status='approved' LIMIT 1",[code]);if(!rows.length)return res.status(404).end();res.type(String(rows[0]!.type||"image/png"));res.setHeader("Cache-Control","public, max-age=3600");res.send(rows[0]!.data||await readFile(path.join(root,"public/assets/intro-sanctuary.png")))}catch(error){next(error)}});
+app.get("/pwa-icon/:size.png",async(req,res,next)=>{try{const size=Number(req.params.size);if(![192,512].includes(size))return res.status(404).end();const code=parishCodeFromHost(req.hostname);if(!code)return res.sendFile(path.join(root,`public/assets/paxlink-pwa-${size}.png`));const [rows]=await pool.query<RowDataPacket[]>("SELECT icon_data AS data FROM parishes WHERE LOWER(parish_code)=? AND approval_status='approved' LIMIT 1",[code]);if(!rows.length)return res.status(404).end();const source=rows[0]!.data||await readFile(path.join(root,"public/assets/intro-sanctuary.png")),mask=Buffer.from(`<svg width="${size}" height="${size}"><circle cx="${size/2}" cy="${size/2}" r="${size/2}" fill="white"/></svg>`),image=await sharp(source).resize(size,size,{fit:"cover",position:"centre"}).composite([{input:mask,blend:"dest-in"}]).png().toBuffer();res.type("image/png");res.setHeader("Cache-Control","public, max-age=86400");res.send(image)}catch(error){next(error)}});
+app.use((req,res,next)=>{const code=parishCodeFromHost(req.hostname);if(!code||req.path.startsWith("/api/"))return next();express.static(path.join(parishSitesRoot,code),{index:"index.html",fallthrough:true})(req,res,next)});
 app.use(express.static(path.join(root, "public")));
 
 app.get("/parish", (_req, res) => res.sendFile(path.join(root, "public/parish/index.html")));
@@ -1193,12 +1227,16 @@ app.patch("/api/supervisor/parishes/:id/approval", requireSupervisor, async (req
     if (status === "cancelled" && (!reason || reason.length > 1000)) {
       return res.status(400).json({ message: "취소 사유를 1~1000자로 입력해 주세요." });
     }
+    const [parishes]=await pool.query<RowDataPacket[]>("SELECT name,parish_code AS parishCode FROM parishes WHERE id=? LIMIT 1",[id]);
+    if(!parishes.length)return res.status(404).json({message:"성당 정보를 찾을 수 없습니다."});
+    if(status==="approved")await provisionParishSite(id,String(parishes[0]!.parishCode),String(parishes[0]!.name));
     const [result] = await pool.execute<mysql.ResultSetHeader>(
       `UPDATE parishes SET approval_status = ?, cancellation_reason = ?, modified_by = ?, modified_at = NOW() WHERE id = ?`,
       [status, status === "cancelled" ? reason : null, res.locals.supervisor, id],
     );
     if (!result.affectedRows) return res.status(404).json({ message: "성당 정보를 찾을 수 없습니다." });
-    res.json({ message: "승인 상태가 저장되었습니다." });
+    const siteHost=status==="approved"&&parishBaseDomain?`${parishes[0]!.parishCode}.${parishBaseDomain}`:null;
+    res.json({ message: status==="approved"?`승인 상태가 저장되었고 '${parishes[0]!.parishCode}' 사이트 디렉터리가 준비되었습니다.`:"승인 상태가 저장되었습니다.",siteHost });
   } catch (error) { next(error); }
 });
 
@@ -1215,6 +1253,9 @@ app.get("/api/parishes", async (req, res, next) => {
     res.json(rows);
   } catch (error) { next(error); }
 });
+
+app.get("/api/parishes/:id/icon",async(req,res,next)=>{try{const id=Number(req.params.id);if(!Number.isSafeInteger(id))return res.status(400).end();const [rows]=await pool.query<RowDataPacket[]>("SELECT icon_type AS type,icon_data AS data FROM parishes WHERE id=? LIMIT 1",[id]);if(!rows.length)return res.status(404).end();res.type(String(rows[0]!.type||"image/png"));res.setHeader("Cache-Control","public, max-age=3600");res.send(rows[0]!.data||await readFile(path.join(root,"public/assets/intro-sanctuary.png")))}catch(error){next(error)}});
+app.get("/api/parish-context",async(req,res,next)=>{try{const code=parishCodeFromHost(req.hostname);if(!code)return res.status(404).json({message:"성당 서브도메인이 아닙니다."});const [rows]=await pool.query<RowDataPacket[]>("SELECT id,name,diocese,parish_code AS parishCode FROM parishes WHERE LOWER(parish_code)=? AND approval_status='approved' LIMIT 1",[code]);if(!rows.length)return res.status(404).json({message:"승인된 성당을 찾을 수 없습니다."});res.setHeader("Cache-Control","no-store");res.json({...rows[0],id:Number(rows[0]!.id),locked:true})}catch(error){next(error)}});
 
 function normalizeEmail(value: unknown) {
   return String(value ?? "").trim().toLowerCase();
@@ -1271,7 +1312,7 @@ function verificationEmailHtml(code: string, purpose: string) {
 }
 
 async function sendCode(email: string, code: string, purpose: string) {
-  if (process.env.EMAIL_DELIVERY_MODE === "mock") return code;
+  if (String(process.env.EMAIL_DELIVERY_MODE??"").trim().toLowerCase() === "mock") return code;
   if (process.env.SMTP_HOST) {
     const transport = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
@@ -1360,6 +1401,7 @@ app.post("/api/parishes", async (req, res, next) => {
     diocese: String(req.body.diocese ?? "").trim(), district: String(req.body.district ?? "").trim(),
     jurisdiction: String(req.body.jurisdiction ?? "").trim(), officePhone: String(req.body.officePhone ?? "").trim(),
     fax: String(req.body.fax ?? "").trim(), homepage: String(req.body.homepage ?? "").trim(),
+    iconType: String(req.body.icon?.type ?? "").trim(), iconData: String(req.body.icon?.data ?? ""),
   };
   const errors: Record<string, string> = {};
   if (values.name.length < 2 || values.name.length > 120) errors.name = "성당 이름은 2~120자로 입력해 주세요.";
@@ -1374,6 +1416,8 @@ app.post("/api/parishes", async (req, res, next) => {
   if (!phonePattern.test(values.officePhone)) errors.officePhone = "전화번호 형식은 02-0000-0000, 000-000-0000 또는 000-0000-0000이어야 합니다.";
   if (values.fax && !phonePattern.test(values.fax)) errors.fax = "팩스 형식은 02-0000-0000, 000-000-0000 또는 000-0000-0000이어야 합니다.";
   if (values.homepage) { try { const url = new URL(values.homepage); if (!/^https?:$/.test(url.protocol)) throw new Error(); } catch { errors.homepage = "http:// 또는 https://로 시작하는 URL을 입력해 주세요."; } }
+  if (values.iconData && !["image/png", "image/jpeg", "image/webp"].includes(values.iconType)) errors.icon = "성당 아이콘은 PNG, JPG, WebP 이미지만 등록할 수 있습니다.";
+  if (values.iconData && Buffer.byteLength(values.iconData, "base64") > 3 * 1024 * 1024) errors.icon = "성당 아이콘은 3MB 이하로 등록해 주세요.";
   if (Object.keys(errors).length) return res.status(400).json({ message: "입력 내용을 확인해 주세요.", errors });
   const tokenHash = crypto.createHash("sha256").update(values.token).digest("hex");
   const connection = await pool.getConnection();
@@ -1385,10 +1429,12 @@ app.post("/api/parishes", async (req, res, next) => {
       [values.email, tokenHash],
     );
     if (!codes.length) { await connection.rollback(); return res.status(401).json({ message: "이메일 인증이 만료되었습니다. 다시 인증해 주세요." }); }
+    const iconData=values.iconData?Buffer.from(values.iconData,"base64"):await readFile(path.join(root,"public/assets/intro-sanctuary.png"));
+    const iconType=values.iconData?values.iconType:"image/png";
     const [result] = await connection.execute<mysql.ResultSetHeader>(
-      `INSERT INTO parishes (name, parish_code, phone, postal_code, address, address_detail, diocese, district, jurisdiction, office_phone, fax, homepage)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [values.name, values.parishCode, values.phone, values.postalCode, values.address, values.addressDetail, values.diocese, values.district, values.jurisdiction, values.officePhone, values.fax || null, values.homepage || null],
+      `INSERT INTO parishes (name, parish_code, phone, postal_code, address, address_detail, diocese, district, jurisdiction, office_phone, fax, homepage, icon_type, icon_data)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [values.name, values.parishCode, values.phone, values.postalCode, values.address, values.addressDetail, values.diocese, values.district, values.jurisdiction, values.officePhone, values.fax || null, values.homepage || null, iconType, iconData],
     );
     await connection.execute("INSERT INTO parish_admins (parish_id, name, email) VALUES (?, ?, ?)", [result.insertId, codes[0]!.manager_name, values.email]);
     await connection.execute("UPDATE parish_registration_codes SET consumed_at = NOW() WHERE id = ?", [codes[0]!.id]);
@@ -1438,8 +1484,8 @@ app.get("/api/parishioner/schedules",requireParishioner,async(req,res,next)=>{
       for(const item of due){const detail=[item.startTime?`${item.startTime} 시작`:"시간 미정",item.location?`장소: ${item.location}`:""].filter(Boolean).join(" · ");await reminderConnection.execute("INSERT INTO parishioner_notifications (parish_id,parishioner_id,category,title,message,reference_type,reference_id) VALUES (?,?,'schedule_reminder','내일 일정 알림',?,'schedule',?)",[parishId,userId,`내일 '${item.title}' 일정이 있습니다. ${detail}`,item.id]);await reminderConnection.execute("UPDATE parishioner_schedule_saves SET reminded_at=NOW() WHERE parishioner_id=? AND schedule_id=?",[userId,item.id])}
       await reminderConnection.commit();
     }catch(error){await reminderConnection.rollback();throw error}finally{reminderConnection.release()}
-    const [rows]=await pool.query<RowDataPacket[]>("SELECT id,DATE_FORMAT(schedule_date,'%Y-%m-%d') AS scheduleDate,TIME_FORMAT(start_time,'%H:%i') AS startTime,TIME_FORMAT(end_time,'%H:%i') AS endTime,category,schedule_type AS scheduleType,title,location,content,attachment_name AS attachmentName FROM parish_schedules WHERE parish_id=? AND schedule_date>=CONCAT(?,'-01') AND schedule_date<DATE_ADD(CONCAT(?,'-01'),INTERVAL 1 MONTH) ORDER BY schedule_date,start_time,id",[parishId,month,month]);
-    res.json(rows.map(row=>({...row,id:Number(row.id)})));
+    const [rows]=await pool.query<RowDataPacket[]>("SELECT id,DATE_FORMAT(schedule_date,'%Y-%m-%d') AS scheduleDate,TIME_FORMAT(start_time,'%H:%i') AS startTime,TIME_FORMAT(end_time,'%H:%i') AS endTime,category,schedule_type AS scheduleType,mass_order AS massOrder,title,location,content,attachment_name AS attachmentName FROM parish_schedules WHERE parish_id=? AND schedule_date>=CONCAT(?,'-01') AND schedule_date<DATE_ADD(CONCAT(?,'-01'),INTERVAL 1 MONTH) ORDER BY schedule_date,start_time,id",[parishId,month,month]);
+    res.json(rows.map(scheduleRow));
   }catch(error){next(error)}
 });
 app.post("/api/parishioner/schedules/:id/save",requireParishioner,async(req,res,next)=>{try{const parishId=Number(res.locals.parishioner.parish_id),userId=await currentParishionerId(res),id=Number(req.params.id);const [rows]=await pool.query<RowDataPacket[]>("SELECT id FROM parish_schedules WHERE id=? AND parish_id=? AND schedule_date>=CURDATE()",[id,parishId]);if(!rows.length)return res.status(404).json({message:"저장할 일정을 찾을 수 없습니다."});await pool.execute("INSERT INTO parishioner_schedule_saves (parishioner_id,schedule_id) VALUES (?,?) ON DUPLICATE KEY UPDATE saved_at=NOW()",[userId,id]);res.json({message:"일정을 저장했습니다. 하루 전에 알림을 드립니다."})}catch(error){next(error)}});
@@ -1978,13 +2024,22 @@ app.patch("/api/parish/nuns/:id", requireParish, async (req, res, next) => { try
 function historyPayload(body: Record<string, unknown>) { return { year: Number(body.year), month: Number(body.month), title: String(body.title ?? "").trim(), description: String(body.description ?? "").trim(), enabled: body.enabled === undefined ? true : Boolean(body.enabled) }; }
 function historyErrors(values: ReturnType<typeof historyPayload>) { const errors: Record<string, string> = {}; if (!Number.isInteger(values.year) || values.year < 1000 || values.year > 9999) errors.year = "연도는 4자리 숫자로 입력해 주세요."; if (!Number.isInteger(values.month) || values.month < 1 || values.month > 12) errors.month = "월을 선택해 주세요."; if (!values.title) errors.title = "연혁 내용을 입력해 주세요."; else if (values.title.length > 300) errors.title = "연혁 내용은 300자 이내로 입력해 주세요."; if (values.description.length > 5000) errors.description = "부가설명은 5,000자 이내로 입력해 주세요."; return errors; }
 async function historyDirection(parishId: number) { const [rows] = await pool.query<RowDataPacket[]>("SELECT sort_direction FROM parish_history_preferences WHERE parish_id = ? LIMIT 1", [parishId]); return rows[0]?.sort_direction === "asc" ? "asc" : "desc"; }
+function scheduleMassOrder(value:unknown){
+  if(!Array.isArray(value))return [];
+  return value.map(item=>String(item??"").trim()).filter(Boolean);
+}
+function scheduleRow(row:RowDataPacket){
+  let massOrder:unknown=row.massOrder;
+  if(typeof massOrder==="string"){try{massOrder=JSON.parse(massOrder)}catch{massOrder=[]}}
+  return {...row,id:Number(row.id),massOrder:scheduleMassOrder(massOrder)};
+}
 app.get("/api/parish/schedules",requireParish,async(req,res,next)=>{
   try{
     const parishId=Number(res.locals.parishSession.parish_id);
     const month=String(req.query.month??"");
     if(!/^\d{4}-\d{2}$/.test(month))return res.status(400).json({message:"조회할 월을 확인해 주세요."});
-    const [rows]=await pool.query<RowDataPacket[]>("SELECT id,DATE_FORMAT(schedule_date,'%Y-%m-%d') AS scheduleDate,TIME_FORMAT(start_time,'%H:%i') AS startTime,TIME_FORMAT(end_time,'%H:%i') AS endTime,category,schedule_type AS scheduleType,title,location,content,attachment_name AS attachmentName,created_at AS createdAt FROM parish_schedules WHERE parish_id=? AND schedule_date>=CONCAT(?,'-01') AND schedule_date<DATE_ADD(CONCAT(?,'-01'),INTERVAL 1 MONTH) ORDER BY schedule_date,start_time,id",[parishId,month,month]);
-    res.json(rows.map(row=>({...row,id:Number(row.id)})));
+    const [rows]=await pool.query<RowDataPacket[]>("SELECT id,DATE_FORMAT(schedule_date,'%Y-%m-%d') AS scheduleDate,TIME_FORMAT(start_time,'%H:%i') AS startTime,TIME_FORMAT(end_time,'%H:%i') AS endTime,category,schedule_type AS scheduleType,mass_order AS massOrder,title,location,content,attachment_name AS attachmentName,created_at AS createdAt FROM parish_schedules WHERE parish_id=? AND schedule_date>=CONCAT(?,'-01') AND schedule_date<DATE_ADD(CONCAT(?,'-01'),INTERVAL 1 MONTH) ORDER BY schedule_date,start_time,id",[parishId,month,month]);
+    res.json(rows.map(scheduleRow));
   }catch(error){next(error)}
 });
 app.post("/api/parish/schedules",requireParish,async(req,res,next)=>{
@@ -1995,6 +2050,7 @@ app.post("/api/parish/schedules",requireParish,async(req,res,next)=>{
     const endTime=String(req.body.endTime??"");
     const category=String(req.body.category??"");
     const scheduleType=String(req.body.scheduleType??"").trim();
+    const massOrder=category==="mass"?scheduleMassOrder(req.body.massOrder):[];
     const title=String(req.body.title??"").trim();
     const location=String(req.body.location??"").trim();
     const content=String(req.body.content??"").trim();
@@ -2002,10 +2058,10 @@ app.post("/api/parish/schedules",requireParish,async(req,res,next)=>{
     const attachmentData=attachment?String(attachment.data??""):"";
     const todayKst=new Date(Date.now()+9*60*60*1000).toISOString().slice(0,10);
     const allowedTypes:Record<string,string[]>={mass:["주일","특전","평일","대축일","장례","위령","기원","혼인","신심","특수","성가","독서"],sacrament:["세례","견진","성체","고해","병자","성품","혼인"],devotion:["사적","공적","성체","예수 성심","성모","선인"],liturgical:[],other:[]};
-    if(!/^\d{4}-\d{2}-\d{2}$/.test(scheduleDate)||scheduleDate<todayKst||!Object.hasOwn(allowedTypes,category)||!title||title.length>200||location.length>300||content.length>5000||(category!=="other"&&!allowedTypes[category]!.includes(scheduleType)))return res.status(400).json({message:scheduleDate<todayKst?"지난 날짜에는 일정을 등록할 수 없습니다.":"일정 구분, 종류 및 입력 내용을 확인해 주세요."});
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(scheduleDate)||scheduleDate<todayKst||!Object.hasOwn(allowedTypes,category)||!title||title.length>200||location.length>300||content.length>5000||massOrder.length>50||massOrder.some(item=>item.length>200)||(category!=="other"&&!allowedTypes[category]!.includes(scheduleType)))return res.status(400).json({message:scheduleDate<todayKst?"지난 날짜에는 일정을 등록할 수 없습니다.":"일정 구분, 종류 및 입력 내용을 확인해 주세요."});
     if((startTime&&!/^\d{2}:\d{2}$/.test(startTime))||(endTime&&!/^\d{2}:\d{2}$/.test(endTime))||(startTime&&endTime&&startTime>=endTime))return res.status(400).json({message:"일정 시간을 확인해 주세요."});
     if(attachment&&(!String(attachment.name??"").trim()||!attachmentData||Buffer.byteLength(attachmentData,"base64")>5*1024*1024))return res.status(400).json({message:"첨부파일은 5MB 이하의 파일만 등록할 수 있습니다."});
-    const [result]=await pool.execute<mysql.ResultSetHeader>("INSERT INTO parish_schedules (parish_id,schedule_date,start_time,end_time,category,schedule_type,title,location,content,attachment_name,attachment_type,attachment_data) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",[parishId,scheduleDate,startTime||null,endTime||null,category,scheduleType||null,title,location||null,content||null,attachment?String(attachment.name).trim():null,attachment?String(attachment.type||"application/octet-stream"):null,attachment?Buffer.from(attachmentData,"base64"):null]);
+    const [result]=await pool.execute<mysql.ResultSetHeader>("INSERT INTO parish_schedules (parish_id,schedule_date,start_time,end_time,category,schedule_type,mass_order,title,location,content,attachment_name,attachment_type,attachment_data) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",[parishId,scheduleDate,startTime||null,endTime||null,category,scheduleType||null,massOrder.length?JSON.stringify(massOrder):null,title,location||null,content||null,attachment?String(attachment.name).trim():null,attachment?String(attachment.type||"application/octet-stream"):null,attachment?Buffer.from(attachmentData,"base64"):null]);
     const categoryLabel:Record<string,string>={mass:"미사",sacrament:"성사",devotion:"신심",liturgical:"전례력",other:"기타"};
     const broadcastMessage=[`${scheduleDate}${startTime?` ${startTime}`:""}`,`${categoryLabel[category]}${scheduleType?` · ${scheduleType}`:""}`,title,location?`장소: ${location}`:""].filter(Boolean).join(" · ");
     await pool.execute("INSERT INTO parishioner_notifications (parish_id,parishioner_id,category,title,message,reference_type,reference_id) SELECT ?,p.id,'schedule_created','새로운 성당 일정',?,'schedule',? FROM parishioners_decrypted p WHERE p.parish_id=?",[parishId,broadcastMessage,result.insertId,parishId]);
@@ -2016,17 +2072,17 @@ app.get("/api/parish/schedules/:id/attachment",requireParish,async(req,res,next)
 app.patch("/api/parish/schedules/:id",requireParish,async(req,res,next)=>{
   try{
     const parishId=Number(res.locals.parishSession.parish_id),id=Number(req.params.id);
-    const scheduleDate=String(req.body.scheduleDate??""),startTime=String(req.body.startTime??""),endTime=String(req.body.endTime??""),category=String(req.body.category??""),scheduleType=String(req.body.scheduleType??"").trim(),title=String(req.body.title??"").trim(),location=String(req.body.location??"").trim(),content=String(req.body.content??"").trim();
+    const scheduleDate=String(req.body.scheduleDate??""),startTime=String(req.body.startTime??""),endTime=String(req.body.endTime??""),category=String(req.body.category??""),scheduleType=String(req.body.scheduleType??"").trim(),massOrder=category==="mass"?scheduleMassOrder(req.body.massOrder):[],title=String(req.body.title??"").trim(),location=String(req.body.location??"").trim(),content=String(req.body.content??"").trim();
     const allowedTypes:Record<string,string[]>={mass:["주일","특전","평일","대축일","장례","위령","기원","혼인","신심","특수","성가","독서"],sacrament:["세례","견진","성체","고해","병자","성품","혼인"],devotion:["사적","공적","성체","예수 성심","성모","선인"],liturgical:[],other:[]};
-    if(!/^\d{4}-\d{2}-\d{2}$/.test(scheduleDate)||!Object.hasOwn(allowedTypes,category)||!title||title.length>200||location.length>300||content.length>5000||(category!=="other"&&!allowedTypes[category]!.includes(scheduleType)))return res.status(400).json({message:"일정 구분, 종류 및 입력 내용을 확인해 주세요."});
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(scheduleDate)||!Object.hasOwn(allowedTypes,category)||!title||title.length>200||location.length>300||content.length>5000||massOrder.length>50||massOrder.some(item=>item.length>200)||(category!=="other"&&!allowedTypes[category]!.includes(scheduleType)))return res.status(400).json({message:"일정 구분, 종류 및 입력 내용을 확인해 주세요."});
     if((startTime&&!/^\d{2}:\d{2}$/.test(startTime))||(endTime&&!/^\d{2}:\d{2}$/.test(endTime))||(startTime&&endTime&&startTime>=endTime))return res.status(400).json({message:"일정 시간을 확인해 주세요."});
     const nowKst=new Date(Date.now()+9*60*60*1000).toISOString().slice(0,19).replace("T"," ");
     const [current]=await pool.query<RowDataPacket[]>("SELECT id FROM parish_schedules WHERE id=? AND parish_id=? AND CONCAT(schedule_date,' ',COALESCE(start_time,'23:59:59'))>?",[id,parishId,nowKst]);
     if(!current.length)return res.status(409).json({message:"이미 시작되었거나 종료된 일정은 수정할 수 없습니다."});
     const attachment=req.body.attachment&&typeof req.body.attachment==="object"?req.body.attachment as {name?:unknown;type?:unknown;data?:unknown}:null,attachmentData=attachment?String(attachment.data??""):"";
     if(attachment&&(!String(attachment.name??"").trim()||!attachmentData||Buffer.byteLength(attachmentData,"base64")>5*1024*1024))return res.status(400).json({message:"첨부파일은 5MB 이하의 파일만 등록할 수 있습니다."});
-    if(attachment)await pool.execute("UPDATE parish_schedules SET schedule_date=?,start_time=?,end_time=?,category=?,schedule_type=?,title=?,location=?,content=?,attachment_name=?,attachment_type=?,attachment_data=? WHERE id=? AND parish_id=?",[scheduleDate,startTime||null,endTime||null,category,scheduleType||null,title,location||null,content||null,String(attachment.name).trim(),String(attachment.type||"application/octet-stream"),Buffer.from(attachmentData,"base64"),id,parishId]);
-    else await pool.execute("UPDATE parish_schedules SET schedule_date=?,start_time=?,end_time=?,category=?,schedule_type=?,title=?,location=?,content=? WHERE id=? AND parish_id=?",[scheduleDate,startTime||null,endTime||null,category,scheduleType||null,title,location||null,content||null,id,parishId]);
+    if(attachment)await pool.execute("UPDATE parish_schedules SET schedule_date=?,start_time=?,end_time=?,category=?,schedule_type=?,mass_order=?,title=?,location=?,content=?,attachment_name=?,attachment_type=?,attachment_data=? WHERE id=? AND parish_id=?",[scheduleDate,startTime||null,endTime||null,category,scheduleType||null,massOrder.length?JSON.stringify(massOrder):null,title,location||null,content||null,String(attachment.name).trim(),String(attachment.type||"application/octet-stream"),Buffer.from(attachmentData,"base64"),id,parishId]);
+    else await pool.execute("UPDATE parish_schedules SET schedule_date=?,start_time=?,end_time=?,category=?,schedule_type=?,mass_order=?,title=?,location=?,content=? WHERE id=? AND parish_id=?",[scheduleDate,startTime||null,endTime||null,category,scheduleType||null,massOrder.length?JSON.stringify(massOrder):null,title,location||null,content||null,id,parishId]);
     res.json({message:"일정이 수정되었습니다."});
   }catch(error){next(error)}
 });
@@ -2191,6 +2247,8 @@ app.use((error: unknown, _req: express.Request, res: express.Response, _next: ex
 });
 
 await ensureSchema();
+const [approvedParishes]=await pool.query<RowDataPacket[]>("SELECT id,name,parish_code AS parishCode FROM parishes WHERE approval_status='approved' AND parish_code IS NOT NULL");
+for(const parish of approvedParishes){await provisionParishSite(Number(parish.id),String(parish.parishCode),String(parish.name))}
 async function createDueLegionReports(){const [organizations]=await pool.query<RowDataPacket[]>(`SELECT o.id,o.parish_id,o.organization_type,t.parishioner_id AS treasurer_id,p.parishioner_id AS president_id FROM legion_organizations o JOIN legion_members t ON t.organization_id=o.id AND t.role='treasurer' AND t.ended_at IS NULL JOIN legion_members p ON p.organization_id=o.id AND p.role='president' AND p.ended_at IS NULL WHERE o.status='approved'`),now=new Date(Date.now()+9*60*60*1000),day=now.getUTCDay(),date=(value:Date)=>value.toISOString().slice(0,10);for(const org of organizations){let from:Date|undefined,to:Date|undefined;if(org.organization_type==='praesidium'&&day===1){to=new Date(now);to.setUTCDate(to.getUTCDate()-1);from=new Date(to);from.setUTCDate(from.getUTCDate()-6)}else if(org.organization_type==='curia'&&now.getUTCDate()===1){to=new Date(Date.UTC(now.getUTCFullYear(),now.getUTCMonth(),0));from=new Date(Date.UTC(to.getUTCFullYear(),to.getUTCMonth(),1))}if(!from||!to)continue;const [result]=await pool.execute<mysql.ResultSetHeader>("INSERT IGNORE INTO legion_account_reports (organization_id,period_from,period_to,requested_by) VALUES (?,?,?,?)",[org.id,date(from),date(to),org.treasurer_id]);if(result.affectedRows)await pool.execute("INSERT INTO parishioner_notifications (parish_id,parishioner_id,category,title,message,reference_type,reference_id) VALUES (?,?,'legion_account_report','레지오마리에 정기 회계보고',?,'legion_report',?)",[org.parish_id,org.president_id,`${date(from)} ~ ${date(to)} 회계보고를 확인해 주세요.`,result.insertId])}}
 void createDueLegionReports().catch(error=>console.error("Legion accounting report batch failed",error));
 const legionReportInterval=setInterval(()=>void createDueLegionReports().catch(error=>console.error("Legion accounting report batch failed",error)),60*60*1000);legionReportInterval.unref();

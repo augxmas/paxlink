@@ -18,6 +18,8 @@ const savedParishKey="paxlink.parishioner.login.parish",savedEmailKey="paxlink.p
 email.insertAdjacentHTML("afterend",`<div class="login-save-options"><label><input id="member-save-parish" type="checkbox"> 성당 저장하기</label><label><input id="member-save-email" type="checkbox"> 이메일 저장하기</label></div>`);
 const saveParish=document.querySelector<HTMLInputElement>("#member-save-parish")!,saveEmail=document.querySelector<HTMLInputElement>("#member-save-email")!;
 try{const savedParish=JSON.parse(localStorage.getItem(savedParishKey)??"null") as {id:number;name:string}|null;if(savedParish?.id&&savedParish.name){parishId.value=String(savedParish.id);search.value=savedParish.name;saveParish.checked=true}const savedEmail=localStorage.getItem(savedEmailKey);if(savedEmail){email.value=savedEmail;saveEmail.checked=true}}catch{localStorage.removeItem(savedParishKey)}
+async function lockParishFromHost(){try{const response=await fetch("/api/parish-context",{headers:{Accept:"application/json"}});if(!response.ok)return;const parish=await response.json() as Parish&{parishCode:string;locked:boolean};parishId.value=String(parish.id);search.value=`${parish.name}${parish.diocese?` · ${parish.diocese}`:""}`;search.readOnly=true;search.removeAttribute("autofocus");search.setAttribute("aria-readonly","true");search.classList.add("parish-fixed");results.hidden=true;saveParish.checked=false;saveParish.closest("label")!.hidden=true;email.focus()}catch{}}
+void lockParishFromHost();
 function persistLoginFields(){if(saveParish.checked&&parishId.value&&search.value.trim())localStorage.setItem(savedParishKey,JSON.stringify({id:Number(parishId.value),name:search.value.trim()}));else localStorage.removeItem(savedParishKey);if(saveEmail.checked&&email.value.trim())localStorage.setItem(savedEmailKey,email.value.trim());else localStorage.removeItem(savedEmailKey)}
 document.querySelector("#member-send-code")!.addEventListener("click",persistLoginFields);
 document.querySelector("#member-login-form")!.addEventListener("submit",persistLoginFields);
@@ -308,7 +310,7 @@ import {startSessionCountdown} from "./session-countdown";
 import "./parishioner-legion";
 import "./parishioner-gateway";
 import "./pwa-install";
-if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("/parishioner-sw.js",{scope:"/parishioner/"}).catch(()=>undefined));
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("/parish-sw.js",{scope:"/"}).catch(()=>undefined));
 import "./parishioner-suggestions";
 import "./parishioner-schedule";
 import "./parishioner-memorials";
@@ -404,6 +406,54 @@ new MutationObserver(mountMemberPreferences).observe(document.body,{childList:tr
 document.addEventListener("click",event=>{if(!(event.target as Element).closest("#member-preferences"))return;queueMicrotask(()=>{const menu=document.querySelector<HTMLElement>("#member-mobile-menu"),backdrop=document.querySelector<HTMLElement>("#member-menu-backdrop"),menuButton=document.querySelector<HTMLButtonElement>("#member-menu-button");document.body.classList.remove("member-menu-open");menu?.classList.remove("open");menu?.setAttribute("aria-hidden","true");if(backdrop)backdrop.hidden=true;menuButton?.setAttribute("aria-expanded","false");menuButton?.setAttribute("aria-label","메뉴 열기")})},true);
 applyMemberFontScale();
 mountMemberPreferences();
+function activateIntroMemberMenu(target:string){
+  const open=()=>{
+    if(target==="gospel-note"){
+      document.body.classList.remove("member-intro-mode");
+      document.querySelector(".member-intro-gateway")?.remove();
+      history.replaceState(null,"",location.pathname);
+      document.dispatchEvent(new CustomEvent("member:open-gospel-note"));
+      return true;
+    }
+    const tab=target==="prayer-dream"
+      ?document.querySelector<HTMLButtonElement>('[data-member-sharing="prayer-dream"]')
+      :target==="memorial"
+        ?document.querySelector<HTMLButtonElement>('[data-member-sharing="memorial"]')
+        :null;
+    if(!tab)return false;
+    document.body.classList.remove("member-intro-mode");
+    document.querySelector(".member-intro-gateway")?.remove();
+    history.replaceState(null,"",location.pathname);
+    tab.click();
+    document.querySelector(".member-sharing")?.scrollIntoView({behavior:"smooth",block:"start"});
+    return true;
+  };
+  if(open())return;
+  let attempts=0;
+  const timer=window.setInterval(()=>{if(open()||++attempts>=40)window.clearInterval(timer)},50);
+}
+
+function openIntroDestination(){
+  const requested=new URLSearchParams(location.search).get("open");
+  if(!requested||!document.body.classList.contains("member-authenticated")||document.querySelector(".member-intro-gateway"))return;
+  const home=document.querySelector<HTMLElement>(".member-home");
+  if(!home)return;
+  const parishName=document.querySelector<HTMLElement>(".member-profile small")?.textContent?.split(" · ")[0]?.trim()||"우리 성당";
+  const gateway=document.createElement("section");
+  gateway.className="member-intro-gateway";
+  gateway.innerHTML=`<header><small>CATHOLIC PARISH</small><h1>함께할 공간을 선택해 주세요</h1><p>${escapeHtml(parishName)}의 세 가지 신도 메뉴입니다.</p></header><div class="member-intro-menu"><button data-intro-member-menu="prayer-dream" type="button"><span>🙏</span><strong>기도드림</strong><small>기도를 나누는 공간</small></button><button data-intro-member-menu="memorial" type="button"><span>★</span><strong>빛의 방</strong><small>추모의 공간</small></button><button data-intro-member-menu="gospel-note" type="button"><span>📖</span><strong>복음노트</strong><small>말씀을 기록하는 공간</small></button></div>`;
+  gateway.querySelectorAll<HTMLButtonElement>("[data-intro-member-menu]").forEach(button=>button.addEventListener("click",()=>activateIntroMemberMenu(button.dataset.introMemberMenu!)));
+  home.prepend(gateway);
+  document.body.classList.add("member-intro-mode");
+}
+document.head.insertAdjacentHTML("beforeend",`<style>
+body.member-intro-mode .member-home{display:grid;min-height:calc(100vh - 92px);place-items:center;padding:30px 18px;background:linear-gradient(145deg,#102552,#203d78)}
+body.member-intro-mode .member-home>:not(.member-intro-gateway){display:none!important}
+.member-intro-gateway{box-sizing:border-box;width:min(100%,760px);padding:38px 30px;border:1px solid rgba(255,255,255,.17);border-radius:24px;background:rgba(8,25,63,.58);color:#fff;text-align:center;box-shadow:0 25px 60px rgba(0,0,0,.25);backdrop-filter:blur(8px)}
+.member-intro-gateway header small{color:#e8ca6d;font-size:10px;font-weight:800;letter-spacing:.28em}.member-intro-gateway header h1{margin:9px 0 7px;font-size:25px}.member-intro-gateway header p{margin:0;color:#c8d2e8;font-size:12px}
+.member-intro-menu{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin-top:32px}.member-intro-menu button{display:flex;min-height:190px;align-items:center;justify-content:center;flex-direction:column;gap:8px;padding:20px;border:1px solid rgba(236,207,111,.55);border-radius:50%;background:radial-gradient(circle,#394e8b 0,#172e62 68%);color:#fff;font:inherit;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.22);transition:.18s transform,.18s border-color}.member-intro-menu button:hover,.member-intro-menu button:focus-visible{transform:translateY(-4px);border-color:#ffe180;outline:none}.member-intro-menu button span{font-size:34px}.member-intro-menu button strong{color:#ffe074;font-size:18px}.member-intro-menu button small{color:#cbd5e9;font-size:10px}
+@media(max-width:640px){body.member-intro-mode .member-home{padding:20px 14px}.member-intro-gateway{padding:28px 16px}.member-intro-menu{grid-template-columns:1fr;max-width:250px;margin:26px auto 0}.member-intro-menu button{min-height:150px;border-radius:22px}.member-intro-gateway header h1{font-size:21px}}
+</style>`);
 document.head.insertAdjacentHTML("beforeend",'<style>.member-preferences-modal .member-modal-box{width:min(92vw,520px);text-align:left}.member-preferences-modal .member-modal-box>h3{text-align:center}.member-preferences-modal .member-modal-body{padding:22px}.member-preferences-modal .member-modal-box>footer{display:flex;justify-content:center;padding:14px;border-top:1px solid var(--line)}.member-preferences-modal .member-modal-box>footer button{width:110px}.member-font-setting{padding:18px;border:1px solid var(--line);border-radius:12px;background:#fbfdfc}.member-font-setting>div:first-child strong{font-size:13px}.member-font-setting>div:first-child p{margin:5px 0 16px;color:var(--muted);font-size:10px}.member-font-controls{display:grid;grid-template-columns:70px 1fr 70px;align-items:center;gap:10px}.member-font-controls button{height:42px;font-size:14px;font-weight:800}.member-font-controls>b{text-align:center;color:var(--green);font-size:16px}.member-font-sample{margin-top:16px;padding:14px;border-radius:9px;background:#eef7f3;text-align:center}.member-font-sample small{color:var(--muted);font-size:8px}.member-font-sample p{margin:6px 0 0;font-size:11px}.member-font-reset{display:block;width:auto;height:34px;margin:13px auto 0;padding:0 13px;font-size:9px}.member-font-controls button:disabled{opacity:.4;cursor:not-allowed}</style>');
 import { mountRequiredMarkers } from "./required-markers";
 mountRequiredMarkers();

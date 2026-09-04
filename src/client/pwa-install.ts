@@ -56,7 +56,7 @@ async function showInstallModal() {
   modal.setAttribute("aria-labelledby", "pwa-install-title");
   modal.innerHTML = `
     <section class="member-modal-box">
-      <div class="pwa-install-icon"><img src="/assets/paxlink-pwa-192.png" alt=""></div>
+      <div class="pwa-install-icon"><img src="/pwa-icon" alt=""></div>
       <h3 id="pwa-install-title">Paxlink를 설치해 보세요</h3>
       <div class="member-modal-body">
         <p>홈 화면에서 바로 열면 본당 소식과 신앙 공동체를 더 편리하게 만날 수 있습니다.</p>

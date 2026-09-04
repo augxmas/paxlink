@@ -14,7 +14,13 @@ const message = document.querySelector<HTMLParagraphElement>("#registration-mess
 const details = document.querySelector<HTMLElement>("#details-section")!;
 const fieldset = details.querySelector<HTMLFieldSetElement>("fieldset")!;
 const form = document.querySelector<HTMLFormElement>("#registration-form")!;
+const parishIcon = document.querySelector<HTMLInputElement>("#parishIcon")!;
+const parishIconDropzone = document.querySelector<HTMLButtonElement>("#parish-icon-dropzone")!;
+const parishIconPreview = document.querySelector<HTMLImageElement>("#parish-icon-preview")!;
+const parishIconDimensions = document.querySelector<HTMLElement>("#parish-icon-dimensions")!;
+const parishIconError = document.querySelector<HTMLElement>("#parish-icon-error")!;
 let verificationToken = "";
+let parishIconPayload:{type:string;data:string}|null=null;
 const customAlert = document.querySelector<HTMLElement>("#custom-alert")!;
 const customAlertMessage = document.querySelector<HTMLParagraphElement>("#custom-alert-message")!;
 const customAlertConfirm = document.querySelector<HTMLButtonElement>("#custom-alert-confirm")!;
@@ -59,6 +65,21 @@ function validateManagerName() {
   showError("reg-manager-name", valid ? "" : "담당자 이름을 2~100자로 입력해 주세요.");
   return valid;
 }
+async function selectParishIcon(file:File){
+  parishIconError.textContent="";
+  const reset=()=>{parishIcon.value="";parishIconPayload=null;parishIconPreview.src="/assets/intro-sanctuary.png";parishIconDimensions.textContent="기본 이미지: 1254 × 1254px"};
+  if(!["image/png","image/jpeg","image/webp"].includes(file.type)){parishIconError.textContent="PNG, JPG, WebP 이미지 파일만 선택해 주세요.";reset();return}
+  if(file.size>3*1024*1024){parishIconError.textContent="아이콘 이미지는 3MB 이하로 선택해 주세요.";reset();return}
+  const dataUrl=await new Promise<string>((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result));reader.onerror=()=>reject(new Error("이미지를 읽지 못했습니다."));reader.readAsDataURL(file)});
+  const dimensions=await new Promise<{width:number;height:number}>((resolve,reject)=>{const image=new Image();image.onload=()=>resolve({width:image.naturalWidth,height:image.naturalHeight});image.onerror=()=>reject(new Error("이미지 크기를 확인하지 못했습니다."));image.src=dataUrl});
+  parishIconPreview.src=dataUrl;parishIconDimensions.textContent=`선택한 이미지: ${dimensions.width} × ${dimensions.height}px${dimensions.width===dimensions.height?"":" · 원형 영역에 맞게 중앙이 잘립니다."}`;
+  parishIconPayload={type:file.type,data:dataUrl.split(",")[1]??""};
+}
+parishIconDropzone.addEventListener("click",()=>parishIcon.click());
+parishIcon.addEventListener("change",()=>{const file=parishIcon.files?.[0];if(file)void selectParishIcon(file).catch(error=>{parishIconError.textContent=(error as Error).message})});
+for(const eventName of ["dragenter","dragover"]){parishIconDropzone.addEventListener(eventName,event=>{event.preventDefault();parishIconDropzone.classList.add("dragging")})}
+for(const eventName of ["dragleave","drop"]){parishIconDropzone.addEventListener(eventName,event=>{event.preventDefault();parishIconDropzone.classList.remove("dragging")})}
+parishIconDropzone.addEventListener("drop",event=>{const file=event.dataTransfer?.files?.[0];if(file)void selectParishIcon(file).catch(error=>{parishIconError.textContent=(error as Error).message})});
 function validateField(name: FieldName) {
   const value = fields[name].value.trim();
   let error = "";
@@ -133,9 +154,9 @@ form.addEventListener("submit", async (event) => {
   if (!valid) return document.querySelector<HTMLInputElement>("input.invalid")?.focus();
   const payload = Object.fromEntries((Object.entries(fields) as [FieldName, HTMLInputElement][]).map(([name, input]) => [name, input.value.trim()]));
   try {
-    const response = await fetch("/api/parishes", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...payload, email: email.value, token: verificationToken }) });
-    const data = await response.json() as { message: string; errors?: Partial<Record<FieldName, string>> };
-    if (data.errors) for (const [name, error] of Object.entries(data.errors)) showError(name, error!);
+    const response = await fetch("/api/parishes", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...payload, email: email.value, token: verificationToken, icon: parishIconPayload }) });
+    const data = await response.json() as { message: string; errors?: Partial<Record<FieldName|"icon", string>> };
+    if (data.errors) for (const [name, error] of Object.entries(data.errors)) {if(name==="icon")parishIconError.textContent=error!;else showError(name, error!)}
     if (!response.ok) throw new Error(data.message);
     await showCustomAlert(data.message);
     location.href = "/parish";

@@ -1,0 +1,12 @@
+version: "3"
+
+endpoints:
+  - name: paxlink-main
+    url: https://paxlink.kr
+    upstream:
+      url: http://127.0.0.1:4500
+
+  - name: paxlink-parishes
+    url: https://*.paxlink.kr
+    upstream:
+      url: http://127.0.0.1:4500

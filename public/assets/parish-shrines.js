@@ -254,12 +254,55 @@
       }
     });
   }
+  function enhanceMassOrder() {
+    const modal3 = document.querySelector(".schedule-editor-modal"), form3 = modal3?.querySelector("form"), category = form3?.querySelector('[name="category"]');
+    if (!modal3 || !form3 || !category || modal3.dataset.massOrderReady) return;
+    modal3.dataset.massOrderReady = "true";
+    const field2 = document.createElement("label");
+    field2.className = "schedule-mass-order-field";
+    field2.innerHTML = '\uBBF8\uC0AC \uC21C\uC11C <textarea name="massOrder" rows="5" maxlength="10049" placeholder="\uC785\uB2F9 \uC131\uAC00\n\uC790\uBE44\uC1A1\n\uB300\uC601\uAD11\uC1A1\n\uB9D0\uC500 \uC804\uB840\n\uC131\uCC2C \uC804\uB840\n\uD30C\uACAC \uC131\uAC00"></textarea><small>\uC9C4\uD589 \uC21C\uC11C\uB300\uB85C \uD55C \uC904\uC5D0 \uD558\uB098\uC529 \uC785\uB825\uD574 \uC8FC\uC138\uC694. (\uCD5C\uB300 50\uAC1C)</small>';
+    const typeField = form3.querySelector(".schedule-type-field");
+    (typeField ?? category.closest("label")).insertAdjacentElement("afterend", field2);
+    const sync = () => {
+      field2.hidden = category.value !== "mass";
+    };
+    category.addEventListener("change", sync);
+    sync();
+    const date = form3.querySelector('[name="scheduleDate"]').value, items4 = calendarItems.filter((item) => item.scheduleDate === date);
+    modal3.querySelectorAll(".selected-date-schedules article").forEach((article, index) => {
+      const item = items4[index];
+      if (item?.category === "mass" && item.massOrder?.length) {
+        const order = document.createElement("ol");
+        order.className = "schedule-mass-order";
+        order.innerHTML = item.massOrder.map((step) => `<li>${escapeSchedule(step)}</li>`).join("");
+        article.append(order);
+      }
+    });
+    modal3.addEventListener("click", (event) => {
+      const button = event.target.closest(".schedule-edit-button");
+      if (!button) return;
+      const article = button.closest("article"), index = [...modal3.querySelectorAll(".selected-date-schedules article")].indexOf(article);
+      queueMicrotask(() => {
+        field2.querySelector("textarea").value = items4[index]?.massOrder?.join("\n") ?? "";
+      });
+    });
+  }
+  var scheduleFetch = window.fetch.bind(window);
+  window.fetch = (input, init) => {
+    const url = typeof input === "string" ? input : input instanceof URL ? input.pathname : input.url;
+    if (/^\/api\/parish\/schedules(?:\/\d+)?$/.test(url) && (init?.method === "POST" || init?.method === "PATCH") && typeof init.body === "string") {
+      const payload = JSON.parse(init.body), form3 = document.querySelector(".schedule-editor-modal form"), field2 = form3?.querySelector('[name="massOrder"]');
+      payload.massOrder = form3?.querySelector('[name="category"]')?.value === "mass" && field2 ? field2.value.split(/\r?\n/).map((value2) => value2.trim()).filter(Boolean) : payload.massOrder ?? [];
+      init = { ...init, body: JSON.stringify(payload) };
+    }
+    return scheduleFetch(input, init);
+  };
   var draggedSchedule = null;
   var scheduleClipboard = null;
   var selectedCalendarSchedule = null;
   var activeCalendarDate = "";
   function schedulePayload(item, scheduleDate) {
-    return { scheduleDate, startTime: item.startTime ?? "", endTime: item.endTime ?? "", category: item.category, scheduleType: item.scheduleType ?? "", title: item.title, location: item.location ?? "", content: item.content ?? "" };
+    return { scheduleDate, startTime: item.startTime ?? "", endTime: item.endTime ?? "", category: item.category, scheduleType: item.scheduleType ?? "", massOrder: item.massOrder ?? [], title: item.title, location: item.location ?? "", content: item.content ?? "" };
   }
   function calendarNotice(message) {
     window.dispatchEvent(new CustomEvent("parish:notice", { detail: message }));
@@ -385,6 +428,9 @@
   document.head.insertAdjacentHTML("beforeend", '<style>.calendar-day em[draggable="true"]{cursor:grab;user-select:none}.calendar-day em[draggable="true"]:active{cursor:grabbing}.calendar-day em.schedule-selected{outline:2px solid var(--blue);outline-offset:1px}.calendar-day em.schedule-dragging{opacity:.45}.calendar-day.schedule-drop-target{position:relative;background:#e8f4ff!important;box-shadow:inset 0 0 0 2px var(--blue)}.calendar-day.schedule-drop-target:after{position:absolute;inset:auto 5px 5px;padding:3px;border-radius:5px;background:var(--blue);color:#fff;content:"\uC774 \uB0A0\uC9DC\uB85C \uC774\uB3D9";font-size:8px;font-weight:800;text-align:center;pointer-events:none}</style>');
   document.head.insertAdjacentHTML("beforeend", "<style>.schedule-interaction-help{margin:-5px 18px 12px;padding:8px 11px;border-radius:7px;background:#f1f6fd;color:#5d6f87;font-size:9px;line-height:1.5;text-align:center}</style>");
   document.head.insertAdjacentHTML("beforeend", "<style>.selected-date-schedules article>p{white-space:pre-wrap;overflow-wrap:anywhere}</style>");
+  new MutationObserver(enhanceMassOrder).observe(document.body, { childList: true, subtree: true });
+  queueMicrotask(enhanceMassOrder);
+  document.head.insertAdjacentHTML("beforeend", "<style>.schedule-mass-order-field[hidden]{display:none}.schedule-mass-order-field small{display:block;margin-top:4px;color:var(--muted);font-size:9px}.schedule-mass-order{margin:8px 0 0;padding:8px 8px 8px 30px;border-top:1px solid rgba(22,119,91,.16);color:#36594f;font-size:10px;line-height:1.7}.schedule-mass-order li::marker{color:var(--green);font-weight:800}</style>");
 
   // src/client/parish-notices.ts
   var panel = document.querySelector("#notice-management");

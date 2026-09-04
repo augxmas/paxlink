@@ -10,3 +10,5 @@ public/assets/parish-priests.js
 public/assets/supervisor.js
 *.log
 .server-*.log
+public/parishes/*/
+!public/parishes/.gitkeep

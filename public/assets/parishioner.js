@@ -2053,7 +2053,7 @@
     document.querySelector(".personal-grace-diary-modal")?.remove();
     const layer = document.createElement("div");
     layer.className = "member-modal legion-content-modal personal-grace-diary-modal";
-    layer.innerHTML = `<section class="member-modal-box"><h3>\uC2E0\uC559\uD65C\uB3D9 \xB7 \uC740\uCD1D\uC77C\uAE30</h3><div class="legion-content-body"><div class="legion-post-list-head"><div><h4>\uB098\uC758 \uC740\uCD1D\uC77C\uAE30</h4><small>\uB098\uB9CC \uD655\uC778\uD560 \uC218 \uC788\uB294 \uAC1C\uC778 \uC2E0\uC559 \uAE30\uB85D\uC785\uB2C8\uB2E4.</small></div><button class="green-button" data-open-post-form type="button">\uC77C\uAE30 \uB4F1\uB85D</button></div><form class="legion-post-form" hidden><h4>\uC77C\uAE30 \uC791\uC131</h4><label><span>* \uC81C\uBAA9</span><input name="title" maxlength="300" required placeholder="\uC81C\uBAA9\uC744 \uC785\uB825\uD574 \uC8FC\uC138\uC694"></label><label><span>* \uB0B4\uC6A9</span><textarea name="content" maxlength="60000" rows="6" required placeholder="\uC624\uB298 \uBC1B\uC740 \uC740\uCD1D\uC744 \uAE30\uB85D\uD574 \uC8FC\uC138\uC694"></textarea></label><div class="legion-story-emojis" aria-label="\uC774\uBAA8\uD2F0\uCF58 \uC120\uD0DD"><span>\uC774\uBAA8\uD2F0\uCF58</span>${["\u{1F600}", "\u{1F60A}", "\u{1F970}", "\u{1F64F}", "\u{1F44F}", "\u2764\uFE0F", "\u{1F44D}", "\u{1F33F}", "\u2728"].map((value) => `<button type="button">${value}</button>`).join("")}</div><p data-post-error></p><div class="legion-post-form-actions"><button data-cancel-post type="button">\uCDE8\uC18C</button><button class="green-button" type="submit" disabled>${prefill.sourceType === "mass" ? "\uC77C\uAE30\uB4F1\uB85D" : "\uC77C\uAE30 \uB4F1\uB85D"}</button></div></form><div data-grace-diary-list><p class="legion-content-loading">\uBD88\uB7EC\uC624\uB294 \uC911...</p></div></div><footer><button data-close type="button">\uB2EB\uAE30</button></footer></section>`;
+    layer.innerHTML = `<section class="member-modal-box"><h3>\uC2E0\uC559\uD65C\uB3D9 \xB7 ${prefill.sourceType === "mass" ? "\uAC15\uB860 \uB178\uD2B8" : "\uC740\uCD1D\uC77C\uAE30"}</h3><div class="legion-content-body"><div class="legion-post-list-head"><div><h4>${prefill.sourceType === "mass" ? "\uAC15\uB860 \uB178\uD2B8" : "\uB098\uC758 \uC740\uCD1D\uC77C\uAE30"}</h4><small>${prefill.sourceType === "mass" ? "\uC2E0\uBD80\uB2D8 \uB9D0\uC500 \uC911 \uB9C8\uC74C\uC5D0 \uB0A8\uAC70\uB098 \uACF5\uAC10\uB41C \uD55C\uB9C8\uB514\uB97C \uC801\uC5B4\uBCF4\uC138\uC694" : "\uB098\uB9CC \uD655\uC778\uD560 \uC218 \uC788\uB294 \uAC1C\uC778 \uC2E0\uC559 \uAE30\uB85D\uC785\uB2C8\uB2E4."}</small></div><button class="green-button" data-open-post-form type="button">${prefill.sourceType === "mass" ? "\uAC15\uB860 \uB178\uD2B8 \uC791\uC131" : "\uC77C\uAE30 \uB4F1\uB85D"}</button></div><form class="legion-post-form" hidden><h4>${prefill.sourceType === "mass" ? "\uAC15\uB860 \uB178\uD2B8" : "\uC77C\uAE30 \uC791\uC131"}</h4><label><span>* \uC81C\uBAA9</span><input name="title" maxlength="300" required placeholder="\uC81C\uBAA9\uC744 \uC785\uB825\uD574 \uC8FC\uC138\uC694"></label><label><span>* \uB0B4\uC6A9</span><textarea name="content" maxlength="60000" rows="6" required placeholder="${prefill.sourceType === "mass" ? "\uC2E0\uBD80\uB2D8 \uB9D0\uC500 \uC911 \uB9C8\uC74C\uC5D0 \uB0A8\uAC70\uB098 \uACF5\uAC10\uB41C \uD55C\uB9C8\uB514\uB97C \uC801\uC5B4\uBCF4\uC138\uC694" : "\uC624\uB298 \uBC1B\uC740 \uC740\uCD1D\uC744 \uAE30\uB85D\uD574 \uC8FC\uC138\uC694"}"></textarea></label><div class="legion-story-emojis" aria-label="\uC774\uBAA8\uD2F0\uCF58 \uC120\uD0DD"><span>\uC774\uBAA8\uD2F0\uCF58</span>${["\u{1F600}", "\u{1F60A}", "\u{1F970}", "\u{1F64F}", "\u{1F44F}", "\u2764\uFE0F", "\u{1F44D}", "\u{1F33F}", "\u2728"].map((value) => `<button type="button">${value}</button>`).join("")}</div><p data-post-error></p><div class="legion-post-form-actions"><button data-cancel-post type="button">\uCDE8\uC18C</button><button class="green-button" type="submit" disabled>${prefill.sourceType === "mass" ? "\uAC15\uB860 \uB178\uD2B8 \uB4F1\uB85D" : "\uC77C\uAE30 \uB4F1\uB85D"}</button></div></form><div data-grace-diary-list><p class="legion-content-loading">\uBD88\uB7EC\uC624\uB294 \uC911...</p></div></div><footer><button data-close type="button">\uB2EB\uAE30</button></footer></section>`;
     document.body.append(layer);
     const form = layer.querySelector(".legion-post-form"), openButton = layer.querySelector("[data-open-post-form]"), submit2 = form.querySelector('button[type="submit"]'), titleInput = form.elements.namedItem("title"), contentInput = form.elements.namedItem("content"), error = form.querySelector("[data-post-error]"), list = layer.querySelector("[data-grace-diary-list]");
     const sync = () => submit2.disabled = !titleInput.value.trim() || !contentInput.value.trim();
@@ -2220,27 +2220,27 @@
   }, true);
   document.addEventListener("member:personal-grace-diary", (event) => {
     const detail = event.detail;
-    void openPersonalGraceDiary({ title: `${detail.scheduleDate} ${detail.title}`, content: `${detail.scheduleType ? `${detail.scheduleType} ` : ""}\uBBF8\uC0AC\uB97C \uD1B5\uD574 \uBC1B\uC740 \uC740\uCD1D\uC744 \uAE30\uB85D\uD569\uB2C8\uB2E4.
-
-`, sourceType: "mass", sourceDate: detail.scheduleDate, sourceScheduleId: detail.scheduleId });
+    void openPersonalGraceDiary({ title: `${detail.scheduleDate} ${detail.title}`, content: "", sourceType: "mass", sourceDate: detail.scheduleDate, sourceScheduleId: detail.scheduleId });
+  });
+  document.addEventListener("member:open-gospel-note", () => {
+    const today = new Date(Date.now() + 9 * 60 * 60 * 1e3).toISOString().slice(0, 10);
+    void openPersonalGraceDiary({ title: `${today} \uBCF5\uC74C\uB178\uD2B8`, content: "", sourceType: "mass", sourceDate: today });
   });
   document.addEventListener("member:mass-grace-diary", (event) => {
     const detail = event.detail;
     void (async () => {
       try {
         const organizations = await api("/api/parishioner/legion/organizations"), praesidium = organizations.find((item) => item.organizationType === "praesidium" && item.role !== "visitor");
-        if (!praesidium) throw new Error("\uC740\uCD1D\uC77C\uAE30\uB97C \uAE30\uB85D\uD560 \uC18C\uC18D \uC058\uB808\uC2DC\uB514\uC6C0\uC774 \uC5C6\uC2B5\uB2C8\uB2E4.");
+        if (!praesidium) throw new Error("\uAC15\uB860 \uB178\uD2B8\uB97C \uAE30\uB85D\uD560 \uC18C\uC18D \uC058\uB808\uC2DC\uB514\uC6C0\uC774 \uC5C6\uC2B5\uB2C8\uB2E4.");
         await openFaithActivity(praesidium.id, praesidium.name, "grace_diary");
         const modal2 = [...document.querySelectorAll(".legion-content-modal")].at(-1), open = modal2?.querySelector("[data-open-post-form]");
         open?.click();
         const form = modal2?.querySelector(".legion-post-form"), title = form?.elements.namedItem("title"), content = form?.elements.namedItem("content");
         if (title) title.value = `${detail.scheduleDate} ${detail.title}`;
         if (content) {
-          content.value = `${detail.scheduleType ? `${detail.scheduleType} ` : ""}\uBBF8\uC0AC\uB97C \uD1B5\uD574 \uBC1B\uC740 \uC740\uCD1D\uC744 \uAE30\uB85D\uD569\uB2C8\uB2E4.
-
-`;
+          content.value = "";
+          content.placeholder = "\uC2E0\uBD80\uB2D8 \uB9D0\uC500 \uC911 \uB9C8\uC74C\uC5D0 \uB0A8\uAC70\uB098 \uACF5\uAC10\uB41C \uD55C\uB9C8\uB514\uB97C \uC801\uC5B4\uBCF4\uC138\uC694";
           content.focus();
-          content.setSelectionRange(content.value.length, content.value.length);
         }
         form?.dispatchEvent(new Event("input", { bubbles: true }));
       } catch (error) {
@@ -2489,37 +2489,17 @@
 
   // src/client/parishioner-gateway.ts
   var gatewayTargets = {
-    schedule: () => openGatewaySection(".member-schedule-section"),
-    groups: () => openGatewaySection(".member-groups"),
-    legion: () => {
+    "prayer-dream": () => openGatewaySharing("prayer-dream"),
+    memorial: () => openGatewaySharing("memorial"),
+    "gospel-note": () => {
       closeGateway();
-      document.dispatchEvent(new CustomEvent("member:gateway-legion", { detail: { action: "home" } }));
-    },
-    faith: () => {
-      closeGateway();
-      document.dispatchEvent(new CustomEvent("member:gateway-faith"));
-    },
-    shrines: () => openGatewaySection(".member-shrines"),
-    sharing: () => openGatewaySharing("catacomb"),
-    videos: () => openGatewaySection(".member-videos"),
-    notices: () => openGatewaySection(".member-notices"),
-    parish: () => {
-      closeGateway();
-      requestAnimationFrame(() => document.querySelector('[data-parish-information="basic"]')?.click());
-    },
-    dictionary: () => {
-      closeGateway();
-      document.dispatchEvent(new CustomEvent("member:gateway-dictionary"));
-    },
-    home: () => openGatewaySection(".member-home")
+      history.replaceState(null, "", location.pathname);
+      document.dispatchEvent(new CustomEvent("member:open-gospel-note"));
+    }
   };
   function closeGateway() {
     document.querySelector(".member-faith-gateway")?.remove();
     document.body.classList.remove("member-gateway-open");
-  }
-  function openGatewaySection(selector) {
-    closeGateway();
-    requestAnimationFrame(() => document.querySelector(selector)?.scrollIntoView({ behavior: "smooth", block: "start" }));
   }
   function openGatewaySharing(tab) {
     closeGateway();
@@ -2528,13 +2508,106 @@
       document.querySelector(`[data-member-sharing="${tab}"]`)?.click();
     });
   }
+  function hostEsc(value) {
+    return String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
+  }
+  async function mountHostGospelNote(layer) {
+    const main = layer.querySelector("main"), today = new Date(Date.now() + 9 * 60 * 60 * 1e3).toISOString().slice(0, 10), initialMonth = today.slice(0, 7);
+    main.innerHTML = `<section class="host-gospel-schedules"><header><div><small>MASS SCHEDULE</small><h2>\uBBF8\uC0AC \uC77C\uC815\uACFC \uAC15\uB860 \uB178\uD2B8</h2><p>\uBBF8\uC0AC\uB97C \uC120\uD0DD\uD574 \uC21C\uC11C\uB97C \uD655\uC778\uD558\uACE0 \uAC15\uB860 \uB9D0\uC500\uC744 \uAE30\uB85D\uD574 \uBCF4\uC138\uC694.</p></div><input type="month" value="${initialMonth}" aria-label="\uC870\uD68C \uC6D4"></header><div data-host-mass-list><p class="parish-host-feature-loading">\uBBF8\uC0AC \uC77C\uC815\uC744 \uBD88\uB7EC\uC624\uB294 \uC911\uC785\uB2C8\uB2E4.</p></div></section><section class="host-grace-diaries"><header><div><small>MY GRACE DIARY</small><h2>\uB098\uC758 \uC740\uCD1D\uC77C\uAE30</h2><p>\uC77C\uBC18 \uC77C\uAE30\uC640 \uBBF8\uC0AC \uAC15\uB860 \uB178\uD2B8\uB97C \uBAA8\uB450 \uD655\uC778\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4.</p></div><button class="green-button" data-new-grace-diary type="button">+ \uC77C\uAE30 \uC791\uC131</button></header><div data-host-diary-list><p class="parish-host-feature-loading">\uC740\uCD1D\uC77C\uAE30\uB97C \uBD88\uB7EC\uC624\uB294 \uC911\uC785\uB2C8\uB2E4.</p></div></section>`;
+    const massList = main.querySelector("[data-host-mass-list]"), diaryList = main.querySelector("[data-host-diary-list]"), monthInput = main.querySelector('input[type="month"]');
+    let diaries = [];
+    const loadDiaries = async () => {
+      try {
+        const response = await fetch("/api/parishioner/grace-diaries"), data = await response.json();
+        if (!response.ok) throw new Error(data.message);
+        diaries = data;
+        diaryList.innerHTML = diaries.length ? `<div class="host-diary-list">${diaries.map((item) => `<article><b class="${item.sourceType}">${item.sourceType === "mass" ? "\uAC15\uB860 \uB178\uD2B8" : "\uC740\uCD1D\uC77C\uAE30"}</b><div><header><strong>${hostEsc(item.title)}</strong><time>${new Date(item.createdAt).toLocaleDateString("ko-KR")}</time></header><p>${hostEsc(item.content)}</p></div></article>`).join("")}</div>` : '<p class="host-feature-empty">\uC544\uC9C1 \uC791\uC131\uD55C \uC740\uCD1D\uC77C\uAE30\uB098 \uAC15\uB860 \uB178\uD2B8\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4.</p>';
+      } catch (error) {
+        diaryList.innerHTML = `<p class="host-feature-empty">${hostEsc(error.message)}</p>`;
+      }
+    };
+    const loadMasses = async () => {
+      massList.innerHTML = '<p class="parish-host-feature-loading">\uBBF8\uC0AC \uC77C\uC815\uC744 \uBD88\uB7EC\uC624\uB294 \uC911\uC785\uB2C8\uB2E4.</p>';
+      try {
+        const response = await fetch(`/api/parishioner/schedules?month=${encodeURIComponent(monthInput.value)}`), data = await response.json();
+        if (!response.ok) throw new Error(data.message);
+        const masses = data.filter((item) => item.category === "mass");
+        const completed = new Set(diaries.filter((item) => item.sourceType === "mass").map((item) => Number(item.sourceScheduleId)));
+        massList.innerHTML = masses.length ? `<div class="host-mass-list">${masses.map((item) => `<article><div class="host-mass-date"><b>${item.scheduleDate.slice(8, 10)}</b><small>${item.scheduleDate}</small></div><div class="host-mass-detail"><header><div><strong>${hostEsc(item.title)}</strong><small>${hostEsc([item.startTime, item.scheduleType, item.location].filter(Boolean).join(" \xB7 "))}</small></div><button data-homily-schedule="${item.id}" ${completed.has(item.id) ? "disabled" : ""} type="button">${completed.has(item.id) ? "\uC791\uC131 \uC644\uB8CC" : "\uAC15\uB860 \uB178\uD2B8 \uC791\uC131"}</button></header>${item.massOrder?.length ? `<section><h3>\uBBF8\uC0AC \uC21C\uC11C</h3><ol>${item.massOrder.map((step) => `<li>${hostEsc(step)}</li>`).join("")}</ol></section>` : '<p class="host-no-order">\uB4F1\uB85D\uB41C \uBBF8\uC0AC \uC21C\uC11C\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4.</p>'}</div></article>`).join("")}</div>` : '<p class="host-feature-empty">\uC120\uD0DD\uD55C \uB2EC\uC5D0 \uB4F1\uB85D\uB41C \uBBF8\uC0AC \uC77C\uC815\uC774 \uC5C6\uC2B5\uB2C8\uB2E4.</p>';
+        massList.querySelectorAll("[data-homily-schedule]").forEach((button) => button.onclick = () => {
+          const item = masses.find((mass) => mass.id === Number(button.dataset.homilySchedule));
+          if (!item) return;
+          document.dispatchEvent(new CustomEvent("member:personal-grace-diary", { detail: { scheduleId: item.id, scheduleDate: item.scheduleDate, title: item.title, scheduleType: item.scheduleType } }));
+        });
+      } catch (error) {
+        massList.innerHTML = `<p class="host-feature-empty">${hostEsc(error.message)}</p>`;
+      }
+    };
+    monthInput.onchange = () => void loadMasses();
+    main.querySelector("[data-new-grace-diary]").onclick = () => document.dispatchEvent(new CustomEvent("member:gateway-faith"));
+    await loadDiaries();
+    await loadMasses();
+    let diaryModalWasOpen = false;
+    new MutationObserver(() => {
+      const open = Boolean(document.querySelector(".personal-grace-diary-modal"));
+      if (open) diaryModalWasOpen = true;
+      else if (diaryModalWasOpen) {
+        diaryModalWasOpen = false;
+        void loadDiaries().then(loadMasses);
+      }
+    }).observe(document.body, { childList: true });
+  }
+  function mountParishHostFeature(target) {
+    if (document.querySelector(".parish-host-feature")) return;
+    const labels2 = {
+      "prayer-dream": { title: "\uAE30\uB3C4\uB4DC\uB9BC", subtitle: "\uAE30\uB3C4\uB97C \uB098\uB204\uACE0 \uD568\uAED8 \uB9C8\uC74C\uC744 \uBAA8\uC73C\uB294 \uACF5\uAC04", icon: "\u{1F64F}" },
+      memorial: { title: "\uBE5B\uC758 \uBC29", subtitle: "\uC18C\uC911\uD55C \uC774\uB97C \uAE30\uC5B5\uD558\uB294 \uCD94\uBAA8\uC758 \uACF5\uAC04", icon: "\u2605" },
+      "gospel-note": { title: "\uBCF5\uC74C\uB178\uD2B8", subtitle: "\uC624\uB298\uC758 \uB9D0\uC500\uC744 \uB9C8\uC74C\uC5D0 \uC0C8\uAE30\uACE0 \uAE30\uB85D\uD558\uB294 \uACF5\uAC04", icon: "\u{1F4D6}" }
+    };
+    const label = labels2[target];
+    if (!label) return;
+    document.body.dataset.gatewayShown = "1";
+    const parishName = document.querySelector(".member-profile small")?.textContent?.split(" \xB7 ")[0]?.trim() || "\uC6B0\uB9AC \uC131\uB2F9";
+    const layer = document.createElement("section");
+    layer.className = `parish-host-feature parish-host-feature-${target}`;
+    layer.innerHTML = `<header><a href="/" aria-label="\uC131\uB2F9 \uCCAB \uD654\uBA74">\u271D</a><div><small>${parishName}</small><h1><span>${label.icon}</span>${label.title}</h1><p>${label.subtitle}</p></div><button type="button" data-host-logout>\uB85C\uADF8\uC544\uC6C3</button></header><nav class="parish-host-feature-nav" aria-label="\uC131\uB2F9 \uC2E0\uB3C4 \uBA54\uB274"><a class="${target === "prayer-dream" ? "active" : ""}" href="/parishioner?open=prayer-dream"><span>\u{1F64F}</span>\uAE30\uB3C4\uB4DC\uB9BC</a><a class="${target === "memorial" ? "active" : ""}" href="/parishioner?open=memorial"><span>\u2605</span>\uCD94\uBAA8\uC758 \uACF5\uAC04</a><a class="${target === "gospel-note" ? "active" : ""}" href="/parishioner?open=gospel-note"><span>\u{1F4D6}</span>\uBCF5\uC74C\uB178\uD2B8</a></nav><main><div class="parish-host-feature-loading">${label.title}\uC744 \uC900\uBE44\uD558\uACE0 \uC788\uC2B5\uB2C8\uB2E4.</div></main>`;
+    document.body.append(layer);
+    document.body.classList.add("parish-host-feature-open");
+    layer.querySelector("[data-host-logout]").onclick = async () => {
+      await fetch("/api/parishioner-auth/logout", { method: "POST" });
+      location.href = "/";
+    };
+    if (target === "gospel-note") {
+      void mountHostGospelNote(layer);
+      return;
+    }
+    let count = 0;
+    const timer3 = window.setInterval(() => {
+      const tab = document.querySelector(`[data-member-sharing="${target}"]`), panel2 = document.querySelector(`[data-member-sharing-panel="${target}"]`);
+      if (tab && panel2) {
+        tab.click();
+        panel2.hidden = false;
+        layer.querySelector("main").replaceChildren(panel2);
+        panel2.classList.add("parish-host-embedded-panel");
+        window.clearInterval(timer3);
+      } else if (++count > 60) window.clearInterval(timer3);
+    }, 50);
+  }
   function mountMemberFaithGateway() {
     if (!document.body.classList.contains("member-authenticated") || document.querySelector(".member-faith-gateway") || document.body.dataset.gatewayShown) return;
+    const hostTarget = new URLSearchParams(location.search).get("open");
+    if (hostTarget && ["prayer-dream", "memorial", "gospel-note"].includes(hostTarget)) {
+      mountParishHostFeature(hostTarget);
+      return;
+    }
     document.body.dataset.gatewayShown = "1";
     const layer = document.createElement("section");
     layer.className = "member-faith-gateway";
     layer.setAttribute("aria-label", "\uC2E0\uB3C4 \uC11C\uBE44\uC2A4 \uC2DC\uC791 \uBA54\uB274");
     layer.innerHTML = `<div class="faith-gateway-glass" aria-hidden="true"><i></i><i></i><i></i><i></i></div><header><div class="faith-gateway-cross" aria-hidden="true">\u271D</div><small>PAXLINK CATHOLIC COMMUNITY</small><h1>\uD568\uAED8 \uAE30\uB3C4\uD558\uACE0,<br>\uB098\uB204\uACE0, \uC131\uC7A5\uD569\uB2C8\uB2E4</h1><p>\uC77C\uC0C1 \uC548\uC5D0\uC11C \uC774\uC5B4\uC9C0\uB294 \uCC9C\uC8FC\uAD50 \uACF5\uB3D9\uCCB4</p></header><main class="faith-gateway-dashboard"><button class="faith-gateway-home" data-gateway="home" type="button"><span>\uC624\uB298\uC758 \uACF5\uB3D9\uCCB4</span><strong>\uCC2C\uBBF8 \uC608\uC218\uB2D8</strong><small>\uC2E0\uB3C4 \uD648\uC73C\uB85C \uC774\uB3D9</small><i>\u203A</i></button><section><h2>\uC2E0\uC559\uC0DD\uD65C</h2><div class="faith-gateway-grid"><button data-gateway="schedule" type="button"><span class="blue">\u25A3</span><b>\uC131\uB2F9 \uC77C\uC815</b><small>\uBBF8\uC0AC\uC640 \uBCF8\uB2F9 \uC77C\uC815</small></button><button data-gateway="faith" type="button"><span class="violet">\u2726</span><b>\uC2E0\uC559\uD65C\uB3D9</b><small>\uC740\uCD1D\uC77C\uAE30\uC640 \uD65C\uB3D9\uBCF4\uACE0</small></button><button data-gateway="shrines" type="button"><span class="gold">\u2302</span><b>\uC131\uC9C0\uC21C\uB840</b><small>\uC21C\uB840\uC9C0\uC640 \uBC29\uBB38 \uAE30\uB85D</small></button><button data-gateway="legion" type="button"><span class="green">\u2720</span><b>\uB808\uC9C0\uC624\uB9C8\uB9AC\uC560</b><small>\uC870\uC9C1\uACFC \uACF5\uB3D9\uCCB4 \uD65C\uB3D9</small></button></div></section><section><h2>\uACF5\uB3D9\uCCB4</h2><div class="faith-gateway-grid compact"><button data-gateway="groups" type="button"><span class="rose">\u2659</span><b>\uB2E8\uCCB4</b></button><button data-gateway="sharing" type="button"><span class="sky">\u2661</span><b>\uB098\uB214</b></button><button data-gateway="videos" type="button"><span class="red">\u25B6</span><b>\uB3D9\uC601\uC0C1</b></button><button data-gateway="notices" type="button"><span class="amber">!</span><b>\uACF5\uC9C0\uC0AC\uD56D</b></button></div></section><button class="faith-gateway-parish" data-gateway="parish" type="button"><span>\u24D8</span><b>\uC131\uB2F9\uC815\uBCF4</b><small>\uBCF8\uB2F9 \uAE30\uBCF8\uC815\uBCF4\uC640 \uC2E0\uBD80\uB2D8 \uC548\uB0B4</small><i>\u203A</i></button><button class="faith-gateway-parish faith-gateway-dictionary" data-gateway="dictionary" type="button"><span>\u25A4</span><b>\uC6A9\uC5B4\uC0AC\uC804</b><small>\uAC00\uD1A8\uB9AD \uC2E0\uC559 \uC6A9\uC5B4\uB97C \uC27D\uAC8C \uCC3E\uC544\uBCF4\uAE30</small><i>\u203A</i></button></main>`;
+    const parishName = document.querySelector(".member-profile small")?.textContent?.split(" \xB7 ")[0]?.trim() || "\uC6B0\uB9AC \uC131\uB2F9";
+    layer.setAttribute("aria-label", "\uC2E0\uB3C4 \uC11C\uBE44\uC2A4 \uC2DC\uC791 \uBA54\uB274");
+    layer.innerHTML = `<header><div class="faith-gateway-cross" aria-hidden="true">\u271D</div><small>CATHOLIC PARISH</small><h1>${parishName}</h1><p>\uD568\uAED8\uD560 \uACF5\uAC04\uC744 \uC120\uD0DD\uD574 \uC8FC\uC138\uC694</p></header><main class="faith-gateway-three"><button data-gateway="prayer-dream" type="button"><span>\u{1F64F}</span><strong>\uAE30\uB3C4\uB4DC\uB9BC</strong><small>\uAE30\uB3C4\uB97C \uB098\uB204\uB294 \uACF5\uAC04</small></button><button data-gateway="memorial" type="button"><span>\u2605</span><strong>\uBE5B\uC758 \uBC29</strong><small>\uCD94\uBAA8\uC758 \uACF5\uAC04</small></button><button data-gateway="gospel-note" type="button"><span>\u{1F4D6}</span><strong>\uBCF5\uC74C\uB178\uD2B8</strong><small>\uB9D0\uC500\uC744 \uAE30\uB85D\uD558\uB294 \uACF5\uAC04</small></button></main>`;
     document.body.append(layer);
     document.body.classList.add("member-gateway-open");
     const gatewayCross = layer.querySelector(".faith-gateway-cross");
@@ -2559,10 +2632,24 @@
 body.member-gateway-open{overflow:hidden}.member-faith-gateway{position:fixed;z-index:2147483000;inset:0;display:flex;min-height:100dvh;align-items:center;flex-direction:column;overflow:auto;padding:42px 20px 34px;box-sizing:border-box;background:radial-gradient(circle at 50% 62%,#203d78 0,#142b58 37%,#0b1c40 78%);color:#f4d36b;font-family:Georgia,"Noto Serif KR",serif}.member-faith-gateway:before{position:absolute;inset:0;border-top:2px solid #6955dc;background:linear-gradient(135deg,rgba(255,255,255,.035),transparent 38%);content:"";pointer-events:none}.faith-gateway-decor{position:absolute;width:250px;height:250px;border:1px solid rgba(212,180,82,.12);border-radius:50%;pointer-events:none}.faith-gateway-decor.one{top:-85px;right:-80px}.faith-gateway-decor.two{bottom:-150px;left:-120px}.member-faith-gateway>header{position:relative;z-index:1;text-align:center}.faith-gateway-mary{position:relative;display:grid;width:124px;height:124px;margin:0 auto 17px;place-items:center;border:2px solid rgba(213,179,74,.72);border-radius:50%;background:radial-gradient(circle at 50% 38%,#fff7d5 0,#d6c1a0 18%,#738bb5 42%,#0a1531 70%);box-shadow:0 0 26px rgba(244,200,70,.18),inset 0 0 25px rgba(0,0,0,.5)}.faith-gateway-mary span{position:absolute;top:14px;color:#fff2aa;font-size:20px}.faith-gateway-mary b{color:#fff4d2;font-size:52px;text-shadow:0 2px 12px #fff}.member-faith-gateway header small{letter-spacing:6px;color:#ba9950;font-size:10px}.member-faith-gateway header h1{margin:11px 0 4px;color:#fff;font-size:25px}.member-faith-gateway header p{margin:0;color:#b9943d;font-size:14px;letter-spacing:3px}.faith-gateway-orbit{position:relative;width:340px;height:350px;margin:35px auto 6px;border:1px dashed rgba(210,176,73,.25);border-radius:50%}.faith-gateway-item,.faith-gateway-center{position:absolute;display:flex;align-items:center;justify-content:center;flex-direction:column;border:1px solid rgba(216,181,71,.5);border-radius:50%;background:radial-gradient(circle at 40% 30%,#294679,#12264f);color:#f1ce5f;cursor:pointer;box-shadow:0 8px 22px rgba(0,0,0,.24);transition:.18s}.faith-gateway-item{width:78px;height:78px}.faith-gateway-item:hover,.faith-gateway-item:focus-visible,.faith-gateway-center:hover,.faith-gateway-center:focus-visible{border-color:#ffe17b;transform:scale(1.07);box-shadow:0 0 24px rgba(255,211,82,.3)}.faith-gateway-item span{font-family:Arial,sans-serif;font-size:25px;line-height:1}.faith-gateway-item b{margin-top:7px;font-size:12px}.faith-gateway-center{top:94px;left:94px;width:150px;height:150px;border-width:2px;background:radial-gradient(circle,#fffadc 0 3%,#ffe066 4%,#e4a825 15%,#72506c 38%,#172e62 66%);box-shadow:0 0 30px rgba(250,200,53,.38),inset 0 0 30px rgba(255,226,118,.35)}.faith-gateway-center span{color:#fff7aa;font-size:73px;line-height:.75;text-shadow:0 0 16px #fff,0 0 28px #ffd745}.faith-gateway-center b{margin-top:16px;color:#ffe25f;font-size:14px;text-shadow:0 2px 4px #000}.faith-gateway-item.choir{top:-38px;left:130px}.faith-gateway-item.prayer{top:33px;left:-25px}.faith-gateway-item.members{top:33px;right:-25px}.faith-gateway-item.desk{bottom:40px;left:-25px}.faith-gateway-item.sharing{right:-25px;bottom:40px}.faith-gateway-item.meeting{bottom:-38px;left:130px}.faith-gateway-guide{position:relative;margin:22px 0 0;color:#a68a4d;font-size:11px;letter-spacing:2px}@media(max-width:430px){.member-faith-gateway{padding-top:28px}.faith-gateway-mary{width:104px;height:104px}.member-faith-gateway header h1{font-size:22px}.faith-gateway-orbit{width:290px;height:300px;margin-top:30px}.faith-gateway-item{width:68px;height:68px}.faith-gateway-item span{font-size:22px}.faith-gateway-center{top:80px;left:80px;width:128px;height:128px}.faith-gateway-center span{font-size:62px}.faith-gateway-item.choir{top:-34px;left:111px}.faith-gateway-item.prayer{top:29px;left:-21px}.faith-gateway-item.members{top:29px;right:-21px}.faith-gateway-item.desk{bottom:34px;left:-21px}.faith-gateway-item.sharing{right:-21px;bottom:34px}.faith-gateway-item.meeting{bottom:-34px;left:111px}}
 </style>`);
   document.head.insertAdjacentHTML("beforeend", `<style>
+.parish-host-feature-gospel-note>main{display:grid;gap:18px;background:transparent;border:0;box-shadow:none;padding:0}.host-gospel-schedules,.host-grace-diaries{padding:24px;border:1px solid #dce5e0;border-radius:20px;background:#fff;box-shadow:0 12px 30px rgba(28,65,52,.07)}.host-gospel-schedules>header,.host-grace-diaries>header{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:20px}.host-gospel-schedules header small,.host-grace-diaries header small{color:#a67a1d;font-size:9px;font-weight:800;letter-spacing:.12em}.host-gospel-schedules h2,.host-grace-diaries h2{margin:4px 0;font-size:19px}.host-gospel-schedules header p,.host-grace-diaries header p{margin:0;color:#7a8882;font-size:10px}.host-gospel-schedules input{height:40px;padding:0 11px;border:1px solid #cbdad4;border-radius:9px;font:inherit}.host-mass-list,.host-diary-list{display:grid;gap:12px}.host-mass-list>article{display:grid;grid-template-columns:80px 1fr;overflow:hidden;border:1px solid #dce5e0;border-radius:14px}.host-mass-date{display:flex;align-items:center;justify-content:center;flex-direction:column;background:#edf7f3;color:#17664f}.host-mass-date b{font-size:28px}.host-mass-date small{font-size:8px}.host-mass-detail{padding:17px}.host-mass-detail>header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0}.host-mass-detail>header strong{display:block;font-size:14px}.host-mass-detail>header small{display:block;margin-top:4px;color:#7d8b85}.host-mass-detail>header button{padding:9px 13px;border:0;border-radius:8px;background:#17664f;color:#fff;font-size:10px;font-weight:800;cursor:pointer}.host-mass-detail>header button:disabled{background:#aebbb6;cursor:default}.host-mass-detail section{margin-top:14px;padding:13px 15px;border-radius:10px;background:#faf7ee}.host-mass-detail section h3{margin:0 0 8px;color:#8a681c;font-size:11px}.host-mass-detail ol{display:flex;flex-wrap:wrap;gap:6px 20px;margin:0;padding-left:20px}.host-mass-detail li{font-size:10px}.host-no-order,.host-feature-empty{margin:12px 0 0;padding:25px;border-radius:10px;background:#f6f8f7;color:#7b8883;text-align:center;font-size:10px}.host-diary-list article{display:grid;grid-template-columns:78px 1fr;gap:14px;padding:15px;border:1px solid #e0e7e3;border-radius:12px}.host-diary-list article>b{align-self:start;padding:6px 8px;border-radius:12px;background:#e8f5ef;color:#17664f;text-align:center;font-size:9px}.host-diary-list article>b.mass{background:#fff2cf;color:#946b0d}.host-diary-list article header{display:flex;justify-content:space-between;gap:10px}.host-diary-list article time{color:#84908b;font-size:9px}.host-diary-list article p{margin:8px 0 0;color:#51615b;font-size:11px;line-height:1.65;white-space:pre-wrap}.host-grace-diaries .green-button{width:auto;padding:0 15px}@media(max-width:640px){.host-gospel-schedules,.host-grace-diaries{padding:16px}.host-gospel-schedules>header,.host-grace-diaries>header{align-items:flex-start;flex-direction:column}.host-mass-list>article{grid-template-columns:1fr}.host-mass-date{padding:9px;align-items:baseline;flex-direction:row;gap:7px}.host-mass-date b{font-size:18px}.host-mass-detail>header{align-items:flex-start;flex-direction:column}.host-mass-detail ol{display:block}.host-diary-list article{grid-template-columns:1fr}.host-diary-list article>b{justify-self:start}}
+</style>`);
+  document.head.insertAdjacentHTML("beforeend", `<style>
+.member-faith-gateway{display:flex!important;justify-content:center!important;padding:34px 18px!important;background:radial-gradient(circle at 50% 62%,#203d78 0,#142b58 42%,#0b1c40 100%)!important}
+.member-faith-gateway>header{min-height:0!important;width:min(100%,720px);padding:28px 20px 72px!important;border-radius:24px 24px 0 0;background:rgba(8,25,63,.56)!important;text-align:center!important}
+.member-faith-gateway>header:after{display:none}.member-faith-gateway .faith-gateway-cross{margin:0 auto 14px}.member-faith-gateway>header h1{margin:8px 0 5px!important;font-size:27px!important}.member-faith-gateway>header p{color:#d2dbee!important;font-size:12px!important}
+.faith-gateway-three{position:relative;z-index:4;display:grid;width:min(calc(100% - 36px),660px);grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;margin:-48px auto 0;padding:24px;box-sizing:border-box;border:1px solid rgba(255,255,255,.14);border-radius:22px;background:rgba(16,37,80,.96);box-shadow:0 24px 55px rgba(0,0,0,.3)}
+.faith-gateway-three button{display:flex;aspect-ratio:1;align-items:center;justify-content:center;flex-direction:column;gap:8px;padding:18px;border:1px solid rgba(236,207,111,.58);border-radius:50%;background:radial-gradient(circle,#3b4f8d 0,#172e62 68%);color:#fff;font:inherit;cursor:pointer;box-shadow:0 9px 24px rgba(0,0,0,.24);transition:.18s transform,.18s border-color}.faith-gateway-three button:hover,.faith-gateway-three button:focus-visible{transform:translateY(-4px);border-color:#ffe180;outline:none}.faith-gateway-three span{font-size:35px}.faith-gateway-three strong{color:#ffe074;font-size:17px}.faith-gateway-three small{color:#cbd5e9;font-size:9px}
+@media(max-width:640px){.member-faith-gateway{justify-content:flex-start!important;padding-top:22px!important}.member-faith-gateway>header{padding-bottom:64px!important}.faith-gateway-three{width:min(calc(100% - 28px),320px);grid-template-columns:1fr;gap:13px;padding:18px}.faith-gateway-three button{min-height:132px;aspect-ratio:auto;border-radius:22px}.member-faith-gateway>header h1{font-size:23px!important}}
+</style>`);
+  document.head.insertAdjacentHTML("beforeend", `<style>
 .faith-gateway-orbit{width:400px;height:400px;margin-top:32px}.faith-gateway-item{width:76px;height:76px}.faith-gateway-item b{max-width:68px;font-family:"Noto Sans KR",sans-serif;font-size:10px;line-height:1.25;white-space:normal}.faith-gateway-center{top:125px;left:125px;width:148px;height:148px}.faith-gateway-item.item-1{top:-30px;left:162px}.faith-gateway-item.item-2{top:23px;right:25px}.faith-gateway-item.item-3{top:133px;right:-37px}.faith-gateway-item.item-4{right:5px;bottom:45px}.faith-gateway-item.item-5{right:103px;bottom:-35px}.faith-gateway-item.item-6{bottom:-10px;left:62px}.faith-gateway-item.item-7{bottom:78px;left:-27px}.faith-gateway-item.item-8{top:88px;left:-37px}.faith-gateway-item.item-9{top:4px;left:57px}@media(max-width:460px){.faith-gateway-orbit{width:320px;height:320px}.faith-gateway-item{width:64px;height:64px}.faith-gateway-item span{font-size:20px}.faith-gateway-item b{max-width:58px;font-size:9px}.faith-gateway-center{top:99px;left:99px;width:120px;height:120px}.faith-gateway-item.item-1{top:-27px;left:128px}.faith-gateway-item.item-2{top:17px;right:18px}.faith-gateway-item.item-3{top:105px;right:-28px}.faith-gateway-item.item-4{right:4px;bottom:34px}.faith-gateway-item.item-5{right:82px;bottom:-29px}.faith-gateway-item.item-6{bottom:-8px;left:48px}.faith-gateway-item.item-7{bottom:61px;left:-22px}.faith-gateway-item.item-8{top:68px;left:-28px}.faith-gateway-item.item-9{top:3px;left:44px}}
 </style>`);
   document.head.insertAdjacentHTML("beforeend", `<style>
 .member-faith-gateway{display:block;padding:0 0 42px;background:#f4f1eb;color:#263c35;font-family:"Noto Sans KR",Arial,sans-serif}.member-faith-gateway:before{border:0;background:none}.member-faith-gateway>header{position:relative;display:block;min-height:245px;padding:42px 28px 70px;box-sizing:border-box;overflow:hidden;background:linear-gradient(145deg,#092f2a,#105744 65%,#287863);color:#fff;text-align:left}.member-faith-gateway>header:after{position:absolute;right:-65px;bottom:-115px;width:260px;height:260px;border:1px solid rgba(255,225,147,.18);border-radius:50%;content:""}.faith-gateway-cross{display:grid;width:46px;height:46px;margin-bottom:21px;place-items:center;border:1px solid rgba(255,230,170,.45);border-radius:15px;background:rgba(255,255,255,.1);color:#f5d88b;font-family:Georgia,serif;font-size:25px;box-shadow:0 8px 25px rgba(0,0,0,.14)}.member-faith-gateway>header small{color:#e8cc83;font-size:9px;font-weight:800;letter-spacing:3px}.member-faith-gateway>header h1{margin:11px 0 9px;color:#fff;font-family:Georgia,"Noto Serif KR",serif;font-size:27px;line-height:1.42}.member-faith-gateway>header p{margin:0;color:#d1e2dc;font-size:11px;letter-spacing:0}.faith-gateway-glass{position:absolute;z-index:2;top:20px;right:18px;display:grid;width:100px;height:100px;grid-template-columns:1fr 1fr;gap:3px;opacity:.22;transform:rotate(12deg);pointer-events:none}.faith-gateway-glass i{border-radius:45% 8%;background:#f0c760}.faith-gateway-glass i:nth-child(2){background:#77b7dc}.faith-gateway-glass i:nth-child(3){background:#9d79c4}.faith-gateway-glass i:nth-child(4){background:#e88378}.faith-gateway-dashboard{position:relative;z-index:3;width:min(100% - 28px,620px);margin:-40px auto 0}.faith-gateway-home,.faith-gateway-parish{position:relative;display:grid;width:100%;grid-template-columns:1fr auto;padding:18px 20px;border:1px solid #dce6e1;border-radius:17px;background:#fff;color:#263c35;text-align:left;box-shadow:0 12px 30px rgba(18,61,48,.12);cursor:pointer}.faith-gateway-home span{grid-column:1;color:#32866b;font-size:9px;font-weight:800}.faith-gateway-home strong{grid-column:1;margin-top:4px;font-family:Georgia,"Noto Serif KR",serif;font-size:18px}.faith-gateway-home small{grid-column:1;margin-top:4px;color:#84918c}.faith-gateway-home i,.faith-gateway-parish i{grid-row:1/4;grid-column:2;align-self:center;color:#4d9a81;font-size:25px;font-style:normal}.faith-gateway-dashboard>section{margin-top:22px}.faith-gateway-dashboard>section>h2{margin:0 0 10px 4px;color:#42564e;font-size:12px}.faith-gateway-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.faith-gateway-grid button{display:grid;min-height:118px;grid-template-columns:43px 1fr;align-content:center;align-items:center;gap:2px 11px;padding:15px;border:1px solid #e0e7e3;border-radius:16px;background:#fff;color:#31463e;text-align:left;box-shadow:0 4px 15px rgba(30,66,55,.055);cursor:pointer;transition:.18s}.faith-gateway-grid button:hover,.faith-gateway-grid button:focus-visible{border-color:#78bca7;transform:translateY(-2px);box-shadow:0 9px 20px rgba(27,87,68,.12)}.faith-gateway-grid button>span{display:grid;width:43px;height:43px;grid-row:1/3;place-items:center;border-radius:13px;background:#e9f2ff;color:#3975ad;font-family:Georgia,serif;font-size:19px;font-weight:800}.faith-gateway-grid button>span.violet{background:#f1ebfb;color:#7954aa}.faith-gateway-grid button>span.gold{background:#fff4d9;color:#a97512}.faith-gateway-grid button>span.green{background:#e4f4ed;color:#247459}.faith-gateway-grid button>span.rose{background:#fcebed;color:#ac5361}.faith-gateway-grid button>span.sky{background:#e6f4fa;color:#347d9d}.faith-gateway-grid button>span.red{background:#fee9e7;color:#bc4e43}.faith-gateway-grid button>span.amber{background:#fff1dc;color:#a96b16}.faith-gateway-grid button>b{align-self:end;font-size:12px}.faith-gateway-grid button>small{align-self:start;color:#87938e;font-size:8px;line-height:1.35}.faith-gateway-grid.compact button{min-height:82px}.faith-gateway-grid.compact button>span{grid-row:1}.faith-gateway-grid.compact button>b{align-self:center}.faith-gateway-parish{margin-top:18px;grid-template-columns:38px 1fr auto;align-items:center;padding:14px 17px;box-shadow:none}.faith-gateway-parish>span{grid-row:1/3;display:grid;width:32px;height:32px;place-items:center;border-radius:10px;background:#edf5f2;color:#3d806a}.faith-gateway-parish>b{grid-column:2;font-size:11px}.faith-gateway-parish>small{grid-column:2;color:#87938e;font-size:8px}.faith-gateway-parish>i{grid-row:1/3;grid-column:3}@media(max-width:430px){.member-faith-gateway>header{min-height:225px;padding:30px 22px 62px}.member-faith-gateway>header h1{font-size:24px}.faith-gateway-dashboard{width:calc(100% - 24px)}.faith-gateway-grid button{min-height:105px;padding:12px;grid-template-columns:39px 1fr;gap-left:8px}.faith-gateway-grid button>span{width:39px;height:39px}.faith-gateway-grid.compact button{min-height:76px}.faith-gateway-home{padding:16px 17px}}
+</style>`);
+  document.head.insertAdjacentHTML("beforeend", `<style>
+body.parish-host-feature-open{overflow:hidden}.parish-host-feature{position:fixed;z-index:2147483001;inset:0;overflow:auto;background:#f3f0e9;color:#263c35;font-family:"Noto Sans KR",Arial,sans-serif}.parish-host-feature>header{display:grid;grid-template-columns:52px 1fr auto;align-items:center;gap:17px;padding:25px max(22px,calc((100vw - 1080px)/2));background:linear-gradient(145deg,#0b2d29,#175b48);color:#fff}.parish-host-feature>header>a{display:grid;width:48px;height:48px;place-items:center;border:1px solid rgba(255,226,157,.5);border-radius:15px;color:#f3d47e;font-size:25px;text-decoration:none}.parish-host-feature>header small{color:#e5ca7e;font-size:10px;font-weight:800;letter-spacing:.12em}.parish-host-feature>header h1{display:flex;align-items:center;gap:9px;margin:3px 0;font-size:25px}.parish-host-feature>header h1 span{font-size:22px}.parish-host-feature>header p{margin:0;color:#d0e2dc;font-size:11px}.parish-host-feature>header button{padding:9px 13px;border:1px solid rgba(255,255,255,.42);border-radius:9px;background:transparent;color:#fff;cursor:pointer}.parish-host-feature-nav{position:sticky;z-index:10;top:0;display:grid;width:min(calc(100% - 32px),1080px);grid-template-columns:repeat(3,1fr);gap:8px;margin:14px auto 0;padding:7px;box-sizing:border-box;border:1px solid #dce5e0;border-radius:15px;background:rgba(255,255,255,.95);box-shadow:0 8px 24px rgba(28,65,52,.1);backdrop-filter:blur(8px)}.parish-host-feature-nav a{display:flex;min-height:45px;align-items:center;justify-content:center;gap:7px;border-radius:10px;color:#52645d;font-size:12px;font-weight:800;text-decoration:none}.parish-host-feature-nav a:hover{background:#edf6f2;color:#17664f}.parish-host-feature-nav a.active{background:#17664f;color:#fff;box-shadow:0 5px 13px rgba(23,102,79,.22)}.parish-host-feature-nav span{font-size:17px}.parish-host-feature>main{box-sizing:border-box;width:min(calc(100% - 32px),1080px);min-height:calc(100vh - 200px);margin:12px auto 22px;padding:24px;border:1px solid #dce5e0;border-radius:20px;background:#fff;box-shadow:0 14px 35px rgba(28,65,52,.08)}.parish-host-feature-loading{padding:70px;text-align:center;color:#708078}.parish-host-embedded-panel{display:block!important;margin:0!important;padding:0!important;border:0!important;box-shadow:none!important}.parish-host-feature .member-sharing-panel{background:#fff}.parish-host-embedded-modal{position:static!important;display:block!important;background:transparent!important}.parish-host-embedded-modal>.member-modal-box{width:100%!important;max-width:none!important;max-height:none!important;margin:0!important;box-shadow:none!important}.parish-host-embedded-modal .member-modal-backdrop{display:none!important}@media(max-width:640px){.parish-host-feature>header{grid-template-columns:44px 1fr;padding:18px}.parish-host-feature>header>a{width:42px;height:42px}.parish-host-feature>header h1{font-size:21px}.parish-host-feature>header p{font-size:9px}.parish-host-feature>header button{grid-column:1/-1;justify-self:end;margin-top:-4px}.parish-host-feature-nav{width:calc(100% - 20px);gap:3px;margin-top:9px;padding:5px}.parish-host-feature-nav a{min-height:42px;gap:4px;font-size:10px}.parish-host-feature-nav span{font-size:14px}.parish-host-feature>main{width:calc(100% - 20px);margin:9px auto;padding:15px;border-radius:15px}}
 </style>`);
 
   // src/client/pwa-install.ts
@@ -2617,7 +2704,7 @@ body.member-gateway-open{overflow:hidden}.member-faith-gateway{position:fixed;z-
     modal2.setAttribute("aria-labelledby", "pwa-install-title");
     modal2.innerHTML = `
     <section class="member-modal-box">
-      <div class="pwa-install-icon"><img src="/assets/paxlink-pwa-192.png" alt=""></div>
+      <div class="pwa-install-icon"><img src="/pwa-icon" alt=""></div>
       <h3 id="pwa-install-title">Paxlink\uB97C \uC124\uCE58\uD574 \uBCF4\uC138\uC694</h3>
       <div class="member-modal-body">
         <p>\uD648 \uD654\uBA74\uC5D0\uC11C \uBC14\uB85C \uC5F4\uBA74 \uBCF8\uB2F9 \uC18C\uC2DD\uACFC \uC2E0\uC559 \uACF5\uB3D9\uCCB4\uB97C \uB354 \uD3B8\uB9AC\uD558\uAC8C \uB9CC\uB0A0 \uC218 \uC788\uC2B5\uB2C8\uB2E4.</p>
@@ -2942,7 +3029,7 @@ body.member-gateway-open{overflow:hidden}.member-faith-gateway{position:fixed;z-
       button.type = "button";
       button.className = "green-outline member-calendar-save";
       button.dataset.scheduleId = String(item.id);
-      button.textContent = isAndroid ? "Google \uC77C\uC815\uC5D0 \uB4F1\uB85D" : isApple ? "Apple \uCE98\uB9B0\uB354\uC5D0 \uB4F1\uB85D" : "\uAE30\uAE30 \uCE98\uB9B0\uB354\uC5D0 \uC800\uC7A5";
+      button.textContent = isAndroid ? "\u{1F4C5} Google \uC77C\uC815\uC5D0 \uB4F1\uB85D" : isApple ? "\u{1F4C5} Apple \uCE98\uB9B0\uB354\uC5D0 \uB4F1\uB85D" : "\u{1F4C5} \uAE30\uAE30 \uCE98\uB9B0\uB354\uC5D0 \uC800\uC7A5";
       button.onclick = () => {
         if (isAndroid) window.open(googleCalendarUrl(item), "_blank", "noopener");
         else saveIcs(item);
@@ -2960,7 +3047,7 @@ body.member-gateway-open{overflow:hidden}.member-faith-gateway{position:fixed;z-
       button.type = "button";
       button.className = "green-outline member-mass-diary";
       button.disabled = true;
-      button.textContent = "\uD655\uC778 \uC911...";
+      button.textContent = "\u{1F4DD} \uD655\uC778 \uC911...";
       button.onclick = () => {
         modal2.remove();
         document.dispatchEvent(new CustomEvent("member:personal-grace-diary", { detail: { scheduleId: item.id, scheduleDate: item.scheduleDate, title: item.title, scheduleType: item.scheduleType } }));
@@ -2971,18 +3058,18 @@ body.member-gateway-open{overflow:hidden}.member-faith-gateway{position:fixed;z-
     if (!massItems.length) return;
     try {
       const response = await fetch("/api/parishioner/grace-diaries"), data = await response.json();
-      if (!response.ok) throw new Error(data.message || "\uC740\uCD1D\uC77C\uAE30 \uAE30\uB85D\uC744 \uD655\uC778\uD558\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4.");
+      if (!response.ok) throw new Error(data.message || "\uAC15\uB860 \uB178\uD2B8 \uAE30\uB85D\uC744 \uD655\uC778\uD558\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4.");
       const completed = new Set(data.map((item) => Number(item.sourceScheduleId)).filter(Boolean));
       massItems.forEach((item) => {
         const button = buttons.get(item.id);
         button.disabled = completed.has(item.id);
-        button.textContent = button.disabled ? "\uC740\uCD1D\uC77C\uAE30 \uC791\uC131\uC644\uB8CC" : "\uC740\uCD1D\uC77C\uAE30 \uC791\uC131";
+        button.textContent = button.disabled ? "\u2705 \uAC15\uB860 \uB178\uD2B8 \uC791\uC131\uC644\uB8CC" : "\u{1F4DD} \uAC15\uB860 \uB178\uD2B8";
       });
     } catch {
       massItems.forEach((item) => {
         const button = buttons.get(item.id);
         button.disabled = true;
-        button.textContent = "\uC791\uC131 \uC5EC\uBD80 \uD655\uC778 \uC2E4\uD328";
+        button.textContent = "\u26A0\uFE0F \uC791\uC131 \uC5EC\uBD80 \uD655\uC778 \uC2E4\uD328";
       });
     }
   }
@@ -3068,10 +3155,26 @@ body.member-gateway-open{overflow:hidden}.member-faith-gateway{position:fixed;z-
   document.head.insertAdjacentHTML("beforeend", "<style>.member-schedule-more{display:block;width:144px!important;height:42px;margin:14px auto 0}.member-schedule-more[hidden]{display:none!important}</style>");
   document.head.insertAdjacentHTML("beforeend", "<style>.member-schedule-view-tabs{gap:6px;margin:12px 0 14px}.member-schedule-view-tabs button{width:auto;min-width:96px;height:30px;padding:0 12px;border-color:#cbded7;border-radius:15px;background:#fff;color:#64736d;font-size:10px;font-weight:700;line-height:1;box-shadow:none}.member-schedule-view-tabs button:hover{border-color:#83c9b2;color:var(--green)}.member-schedule-view-tabs button.active{border-color:var(--green);background:#e8f7f2;color:var(--green);box-shadow:inset 0 0 0 1px rgba(21,149,111,.04)}.member-schedule-more{width:120px!important;height:36px!important;margin:12px auto 0!important;padding:0 12px!important;border-radius:8px!important;font-size:14px!important;font-weight:700;line-height:1}@media(max-width:600px){.member-schedule-view-tabs{margin:10px 0 12px}.member-schedule-view-tabs button{min-width:88px;height:28px;padding:0 10px;font-size:9px}.member-schedule-more{width:112px!important;height:34px!important;font-size:13px!important}}</style>");
   document.head.insertAdjacentHTML("beforeend", "<style>.member-schedule-modal article.mass{border-left-color:#16775b;background:#e8f7f1}.member-schedule-modal article.mass header span,.member-schedule-modal article.mass .member-schedule-location{color:#16775b}.member-schedule-modal article.sacrament{border-left-color:#c58a22;background:#fff3df}.member-schedule-modal article.sacrament header span,.member-schedule-modal article.sacrament .member-schedule-location{color:#9c6a13}.member-schedule-modal article.liturgical{border-left-color:#8062b5;background:#f3edff}.member-schedule-modal article.liturgical header span,.member-schedule-modal article.liturgical .member-schedule-location{color:#684ca0}.member-schedule-modal article.other{border-left-color:#627ba4;background:#edf2fa}.member-schedule-modal article.other header span,.member-schedule-modal article.other .member-schedule-location{color:#486489}</style>");
-  document.head.insertAdjacentHTML("beforeend", '<style>.member-schedule-modal .member-modal-box>footer{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:10px}.member-schedule-modal .member-modal-box>footer::after{content:""}.member-schedule-actions{display:flex;align-items:center;justify-content:flex-start;gap:6px;min-width:0}.member-schedule-actions .member-calendar-save,.member-schedule-actions .member-mass-diary{display:inline-flex!important;width:auto!important;height:34px!important;align-items:center;justify-content:center;margin:0!important;padding:0 11px!important;box-sizing:border-box;white-space:nowrap;line-height:1}.member-schedule-actions .member-mass-diary{border-color:var(--green);background:var(--green);color:#fff}@media(max-width:520px){.member-schedule-modal .member-modal-box>footer{grid-template-columns:1fr auto;align-items:end}.member-schedule-modal .member-modal-box>footer::after{display:none}.member-schedule-actions{flex-wrap:wrap}.member-schedule-actions .member-calendar-save,.member-schedule-actions .member-mass-diary{height:32px!important;padding:0 8px!important;font-size:9px}}</style>');
+  document.head.insertAdjacentHTML("beforeend", "<style>.member-schedule-modal .member-modal-box>footer{display:flex;align-items:center;justify-content:center;gap:6px}.member-schedule-modal .member-modal-box>footer::after{display:none}.member-schedule-actions{display:flex;min-width:0;align-items:center;justify-content:center;gap:6px}.member-schedule-actions .member-calendar-save,.member-schedule-actions .member-mass-diary,.member-schedule-modal .member-modal-box>footer>[data-close]{display:inline-flex!important;width:auto!important;height:34px!important;flex:0 0 auto;align-items:center;justify-content:center;margin:0!important;padding:0 11px!important;box-sizing:border-box;white-space:nowrap;line-height:1}.member-schedule-actions .member-mass-diary{border-color:var(--green);background:var(--green);color:#fff}@media(max-width:520px){.member-schedule-modal .member-modal-box>footer{flex-wrap:wrap}.member-schedule-actions{flex-wrap:wrap}.member-schedule-actions .member-calendar-save,.member-schedule-actions .member-mass-diary,.member-schedule-modal .member-modal-box>footer>[data-close]{height:32px!important;padding:0 8px!important;font-size:9px}}</style>");
   document.head.insertAdjacentHTML("beforeend", "<style>.member-schedule-actions .member-mass-diary:disabled{border-color:#cbd7d2!important;background:#dfe7e4!important;color:#82918b!important;cursor:not-allowed;box-shadow:none}</style>");
   document.head.insertAdjacentHTML("beforeend", "<style>.member-schedule-block.mass{border-left-color:#16775b;background:#e8f7f1}.member-schedule-block.mass>time b,.member-schedule-block.mass small{color:#16775b}.member-schedule-block.sacrament{border-left-color:#c58a22;background:#fff3df}.member-schedule-block.sacrament>time b,.member-schedule-block.sacrament small{color:#9c6a13}.member-schedule-block.devotion{border-left-color:#bd5d7e;background:#fff0f5}.member-schedule-block.devotion>time b,.member-schedule-block.devotion small{color:#a74668}.member-schedule-block.liturgical{border-left-color:#8062b5;background:#f3edff}.member-schedule-block.liturgical>time b,.member-schedule-block.liturgical small{color:#684ca0}.member-schedule-block.other{border-left-color:#627ba4;background:#edf2fa}.member-schedule-block.other>time b,.member-schedule-block.other small{color:#486489}</style>");
   document.head.insertAdjacentHTML("beforeend", "<style>.member-schedule-attachment{display:inline-block;margin-top:10px;padding:7px 10px;border:1px solid currentColor;border-radius:7px;color:var(--green);font-size:11px;font-weight:700;text-decoration:none;background:#fff}.member-schedule-attachment:hover{filter:brightness(.97)}</style>");
+  function renderMemberMassOrder() {
+    const modal2 = document.querySelector(".member-schedule-modal");
+    if (!modal2 || modal2.dataset.massOrderReady) return;
+    modal2.dataset.massOrderReady = "true";
+    const date = modal2.querySelector("h3")?.textContent?.slice(0, 10) ?? "", scheduleId = Number(modal2.dataset.scheduleId), items = memberSchedules.filter((item) => item.scheduleDate === date && (!scheduleId || item.id === scheduleId));
+    modal2.querySelectorAll(".member-modal-body article").forEach((article, index) => {
+      const order = items[index]?.massOrder;
+      if (!order?.length) return;
+      const section = document.createElement("section");
+      section.className = "member-mass-order";
+      section.innerHTML = `<strong>\uBBF8\uC0AC \uC21C\uC11C</strong><ol>${order.map((step) => `<li>${memberEscape(step)}</li>`).join("")}</ol>`;
+      article.append(section);
+    });
+  }
+  new MutationObserver(renderMemberMassOrder).observe(document.body, { childList: true, subtree: true });
+  document.head.insertAdjacentHTML("beforeend", "<style>.member-mass-order{margin-top:12px;padding:11px 13px;border:1px solid rgba(22,119,91,.18);border-radius:8px;background:rgba(255,255,255,.72)}.member-mass-order>strong{color:#16775b;font-size:11px}.member-mass-order ol{margin:7px 0 0;padding-left:22px;color:#3d5a52;font-size:11px;line-height:1.8}.member-mass-order li::marker{color:var(--green);font-weight:800}</style>");
 
   // src/client/parishioner-memorials.ts
   var memEsc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
@@ -3465,6 +3568,25 @@ body.member-gateway-open{overflow:hidden}.member-faith-gateway{position:fixed;z-
   } catch {
     localStorage.removeItem(savedParishKey);
   }
+  async function lockParishFromHost() {
+    try {
+      const response = await fetch("/api/parish-context", { headers: { Accept: "application/json" } });
+      if (!response.ok) return;
+      const parish = await response.json();
+      parishId.value = String(parish.id);
+      search.value = `${parish.name}${parish.diocese ? ` \xB7 ${parish.diocese}` : ""}`;
+      search.readOnly = true;
+      search.removeAttribute("autofocus");
+      search.setAttribute("aria-readonly", "true");
+      search.classList.add("parish-fixed");
+      results.hidden = true;
+      saveParish.checked = false;
+      saveParish.closest("label").hidden = true;
+      email.focus();
+    } catch {
+    }
+  }
+  void lockParishFromHost();
   function persistLoginFields() {
     if (saveParish.checked && parishId.value && search.value.trim()) localStorage.setItem(savedParishKey, JSON.stringify({ id: Number(parishId.value), name: search.value.trim() }));
     else localStorage.removeItem(savedParishKey);
@@ -6152,7 +6274,7 @@ body.member-gateway-open{overflow:hidden}.member-faith-gateway{position:fixed;z-
   document.head.insertAdjacentHTML("beforeend", "<style>.member-group-modal .member-modal-box>form{flex:1 1 auto!important;overflow-y:auto!important}.member-group-modal .member-group-fixed-actions{position:static!important;z-index:auto;display:flex;flex:0 0 auto;justify-content:center!important;gap:9px;margin:0!important;padding:8px 22px!important;border-top:1px solid var(--line);background:#fff;box-shadow:0 -5px 14px rgba(19,63,49,.05)}.member-group-modal .member-group-fixed-actions button{height:36px!important;min-width:100px!important}</style>");
   document.head.insertAdjacentHTML("beforeend", "<style>.member-notices>header{gap:10px}.member-notices>header #member-notice-count{margin-left:auto}.member-notice-more{width:auto;height:34px;padding:0 13px}.member-notice-more[hidden]{display:none!important}.member-notice>p{display:-webkit-box;overflow:hidden;-webkit-box-orient:vertical;-webkit-line-clamp:2}.member-notice-detail{display:block;width:auto;height:34px;margin:12px 0 0 auto;padding:0 13px}.member-notice-detail-modal .member-modal-box{display:flex;width:min(92vw,680px);max-height:86vh;flex-direction:column;overflow:hidden;text-align:left}.member-notice-detail-modal .member-modal-box>h3{flex:0 0 auto;text-align:center}.member-notice-detail-modal .member-modal-body{overflow-y:auto}.member-notice-detail-meta{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}.member-notice-detail-meta b{padding:3px 8px;border-radius:10px;background:#fff1cf;color:#9a6b00;font-size:9px}.member-notice-detail-meta time{margin-left:auto;color:#929eaa;font-size:10px}.member-notice-detail-modal .member-modal-body>p{margin:0;color:#5f6d7f;line-height:1.8;white-space:pre-wrap}.member-notice-detail-modal>.member-modal-box>footer{display:flex;flex:0 0 auto;justify-content:center;padding:12px;border-top:1px solid var(--line)}.member-notice-detail-modal>.member-modal-box>footer button{width:110px;height:40px}</style>");
   document.head.insertAdjacentHTML("beforeend", "<style>.member-notice .member-notice-detail{width:auto!important;height:28px!important;margin:10px 0 0 auto!important;padding:0 11px!important;border-radius:8px!important;font-size:9px!important;line-height:1;white-space:nowrap}@media(max-width:600px){.member-notice .member-notice-detail{height:26px!important;padding:0 9px!important}}</style>");
-  if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("/parishioner-sw.js", { scope: "/parishioner/" }).catch(() => void 0));
+  if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("/parish-sw.js", { scope: "/" }).catch(() => void 0));
   function applyMeetingTerminology(root = document.body) {
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
     let node;
@@ -6636,6 +6758,14 @@ body.member-gateway-open{overflow:hidden}.member-faith-gateway{position:fixed;z-
   }, true);
   applyMemberFontScale();
   mountMemberPreferences();
+  document.head.insertAdjacentHTML("beforeend", `<style>
+body.member-intro-mode .member-home{display:grid;min-height:calc(100vh - 92px);place-items:center;padding:30px 18px;background:linear-gradient(145deg,#102552,#203d78)}
+body.member-intro-mode .member-home>:not(.member-intro-gateway){display:none!important}
+.member-intro-gateway{box-sizing:border-box;width:min(100%,760px);padding:38px 30px;border:1px solid rgba(255,255,255,.17);border-radius:24px;background:rgba(8,25,63,.58);color:#fff;text-align:center;box-shadow:0 25px 60px rgba(0,0,0,.25);backdrop-filter:blur(8px)}
+.member-intro-gateway header small{color:#e8ca6d;font-size:10px;font-weight:800;letter-spacing:.28em}.member-intro-gateway header h1{margin:9px 0 7px;font-size:25px}.member-intro-gateway header p{margin:0;color:#c8d2e8;font-size:12px}
+.member-intro-menu{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin-top:32px}.member-intro-menu button{display:flex;min-height:190px;align-items:center;justify-content:center;flex-direction:column;gap:8px;padding:20px;border:1px solid rgba(236,207,111,.55);border-radius:50%;background:radial-gradient(circle,#394e8b 0,#172e62 68%);color:#fff;font:inherit;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.22);transition:.18s transform,.18s border-color}.member-intro-menu button:hover,.member-intro-menu button:focus-visible{transform:translateY(-4px);border-color:#ffe180;outline:none}.member-intro-menu button span{font-size:34px}.member-intro-menu button strong{color:#ffe074;font-size:18px}.member-intro-menu button small{color:#cbd5e9;font-size:10px}
+@media(max-width:640px){body.member-intro-mode .member-home{padding:20px 14px}.member-intro-gateway{padding:28px 16px}.member-intro-menu{grid-template-columns:1fr;max-width:250px;margin:26px auto 0}.member-intro-menu button{min-height:150px;border-radius:22px}.member-intro-gateway header h1{font-size:21px}}
+</style>`);
   document.head.insertAdjacentHTML("beforeend", "<style>.member-preferences-modal .member-modal-box{width:min(92vw,520px);text-align:left}.member-preferences-modal .member-modal-box>h3{text-align:center}.member-preferences-modal .member-modal-body{padding:22px}.member-preferences-modal .member-modal-box>footer{display:flex;justify-content:center;padding:14px;border-top:1px solid var(--line)}.member-preferences-modal .member-modal-box>footer button{width:110px}.member-font-setting{padding:18px;border:1px solid var(--line);border-radius:12px;background:#fbfdfc}.member-font-setting>div:first-child strong{font-size:13px}.member-font-setting>div:first-child p{margin:5px 0 16px;color:var(--muted);font-size:10px}.member-font-controls{display:grid;grid-template-columns:70px 1fr 70px;align-items:center;gap:10px}.member-font-controls button{height:42px;font-size:14px;font-weight:800}.member-font-controls>b{text-align:center;color:var(--green);font-size:16px}.member-font-sample{margin-top:16px;padding:14px;border-radius:9px;background:#eef7f3;text-align:center}.member-font-sample small{color:var(--muted);font-size:8px}.member-font-sample p{margin:6px 0 0;font-size:11px}.member-font-reset{display:block;width:auto;height:34px;margin:13px auto 0;padding:0 13px;font-size:9px}.member-font-controls button:disabled{opacity:.4;cursor:not-allowed}</style>");
   mountRequiredMarkers();
 })();

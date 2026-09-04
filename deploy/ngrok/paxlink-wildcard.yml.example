@@ -1,0 +1,8 @@
+version: "3"
+
+# 실제 authtoken은 이 파일에 저장하지 말고 기존 ngrok 사용자 설정을 사용하세요.
+endpoints:
+  - name: paxlink-wildcard
+    url: https://*.paxlink.kr
+    upstream:
+      url: http://127.0.0.1:4500
