@@ -1,0 +1,25 @@
+.location-guide-management{border:1px solid var(--line);border-radius:17px;background:#fff;overflow:hidden}
+.location-guide-management[hidden]{display:none}
+.location-guide-management>header{padding:24px 28px;border-bottom:1px solid var(--line)}
+.location-guide-management h2{margin:0 0 6px;font-size:20px}
+.location-guide-management h3{margin:0 0 8px;font-size:15px}
+.location-guide-management p{margin:6px 0;color:var(--muted);font-size:12px;line-height:1.7}
+.location-guide-body{padding:24px 28px}
+#location-address{color:var(--ink);font-weight:700;font-size:14px}
+#location-map{display:block;width:100%;height:380px;margin-top:16px;border:1px solid var(--line);border-radius:12px;background:#f5f8fc}
+#location-map[hidden]{display:none}
+#location-map-empty{padding:45px 20px;margin-top:16px;background:#f5f8fc;border:1px dashed var(--line);border-radius:12px;text-align:center;color:var(--muted);font-size:13px}
+.location-map-actions,.location-transport-heading,.location-save-actions{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:16px}
+.location-map-actions a{color:var(--blue);font-size:12px}
+#location-transport-form{margin-top:30px;border-top:1px solid var(--line);padding-top:8px}
+#location-transport-form fieldset{margin:0;padding:0;border:0;min-width:0}
+.location-transport-row{display:grid;grid-template-columns:minmax(100px,1fr) minmax(120px,1fr) minmax(180px,2fr) auto;align-items:start;gap:12px;padding:18px 0;border-bottom:1px solid var(--line)}
+.location-transport-row label{font-size:12px;font-weight:700;min-width:0}
+.location-transport-row label>span{color:#c33}
+.location-transport-row input,.location-transport-row textarea{display:block;box-sizing:border-box;width:100%;min-height:44px;margin-top:7px;padding:10px 12px;border:1px solid #ced9e8;border-radius:8px;font:inherit;font-weight:400;line-height:1.6}
+.location-transport-row textarea{resize:vertical}
+.location-guide-management button{width:auto;min-height:42px;padding:8px 16px;cursor:pointer}
+.location-transport-row .location-remove{margin-top:24px;border:1px solid #efd0d0;border-radius:8px;background:#fff8f8;color:#b03b3b}
+.location-save-actions{justify-content:flex-end}
+#location-status{min-height:20px;margin-top:16px}
+@media(max-width:700px){.location-guide-management>header,.location-guide-body{padding:18px}.location-transport-row{grid-template-columns:1fr 1fr}.location-transport-row label:nth-child(3){grid-column:1/-1}.location-transport-row .location-remove{grid-column:2;justify-self:end;margin-top:0}.location-transport-heading{align-items:flex-start}.location-map-actions{flex-wrap:wrap}#location-map{height:300px}}

@@ -1,0 +1,13 @@
+#pastoral-goals-management{padding:24px;background:#fff;border:1px solid #d9e7e1;border-radius:16px;color:#243c33}
+#pastoral-goals-management[hidden]{display:none}
+#pastoral-goals-management p{line-height:1.7;color:#60746a}
+#pastoral-goals-management label{display:flex;flex-direction:column;gap:8px;margin-bottom:18px;font-weight:600}
+#pastoral-goals-management input,#pastoral-goals-management textarea,#pastoral-goals-management select{box-sizing:border-box;width:100%;padding:12px;border:1px solid #cdded5;border-radius:8px;font:inherit;background:#fff;color:#243c33}
+#pastoral-goals-management textarea{resize:vertical}
+#pastoral-goals-management fieldset{min-width:0;border:0;padding:0}
+#pastoral-goals-management legend{font-size:1.15rem;font-weight:700;margin-bottom:20px}
+.pastoral-year{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-top:24px}
+.pastoral-year label{flex:1;min-width:130px}
+.pastoral-goal{padding:20px;margin-bottom:16px;background:#f4f9f6;border:1px solid #dce9e1;border-radius:12px}
+.pastoral-actions{display:flex;gap:12px;margin-top:28px;flex-wrap:wrap}
+@media(max-width:600px){#pastoral-goals-management{padding:16px}.pastoral-year{align-items:stretch;flex-direction:column}.pastoral-goal{padding:14px}}

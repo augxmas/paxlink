@@ -12,3 +12,7 @@ public/assets/supervisor.js
 .server-*.log
 public/parishes/*/
 !public/parishes/.gitkeep
+.private-backups/
+.tmp-*/
+.ssh-known-hosts
+database/backups/**/*.sql.gz

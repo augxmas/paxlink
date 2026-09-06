@@ -1,0 +1,2 @@
+database/backups/**/schema.sql text eol=lf
+database/backups/**/*.enc binary

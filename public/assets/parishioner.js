@@ -1,5 +1,651 @@
 "use strict";
 (() => {
+  // src/client/parishioner-guest-dashboard.ts
+  async function mountGuestDashboard(render) {
+    const response = await fetch("/api/public/faith-parishes");
+    if (!response.ok) throw new Error("\uC131\uB2F9 \uBAA9\uB85D\uC744 \uBD88\uB7EC\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4.");
+    const parishes = await response.json();
+    let parish = parishes.find((p) => Number(p.id) === Number(new URLSearchParams(location.search).get("parishId")));
+    const shell = document.querySelector(".member-shell");
+    const loginDialog = document.createElement("dialog");
+    loginDialog.className = "guest-login-dialog";
+    loginDialog.setAttribute("aria-label", "\uC2E0\uB3C4 \uB85C\uADF8\uC778");
+    const close = document.createElement("button");
+    close.type = "button";
+    close.className = "guest-login-close";
+    close.textContent = "\uB2EB\uAE30 \xB7 \uACC4\uC18D \uBCF4\uAE30";
+    close.onclick = () => loginDialog.close();
+    loginDialog.append(close);
+    const loginContent = document.createElement("div");
+    loginContent.className = "member-shell";
+    while (shell.firstChild) loginContent.append(shell.firstChild);
+    loginDialog.append(loginContent);
+    document.body.append(loginDialog);
+    let opener = null;
+    const login = () => {
+      if (loginDialog.open) return;
+      opener = document.activeElement;
+      const id = document.querySelector("#member-parish-id"), search2 = document.querySelector("#member-parish-search");
+      if (parish) {
+        if (id) id.value = String(parish.id);
+        if (search2) search2.value = parish.name;
+      }
+      document.body.classList.add("guest-login-open");
+      loginDialog.showModal();
+      document.querySelector("#member-email")?.focus({ preventScroll: true });
+    };
+    loginDialog.addEventListener("close", () => {
+      document.body.classList.remove("guest-login-open");
+      opener?.focus({ preventScroll: true });
+    });
+    const rawFetch = window.fetch.bind(window);
+    function publicUrl(value) {
+      const u = new URL(value, location.origin);
+      if (u.origin === location.origin && u.pathname.startsWith("/api/parishioner/")) {
+        u.pathname = u.pathname.replace("/api/parishioner/", "/api/public/member/");
+        u.searchParams.set("parishId", String(parish.id));
+      }
+      return u.href;
+    }
+    function activate() {
+      if (!parish) return;
+      const url = new URL(location.href);
+      url.searchParams.set("parishId", String(parish.id));
+      url.searchParams.delete("open");
+      history.replaceState(null, "", url);
+      window.fetch = async (input, init) => {
+        const url2 = new URL(typeof input === "string" ? input : input instanceof URL ? input.href : input.url, location.origin);
+        if (url2.origin !== location.origin || !url2.pathname.startsWith("/api/parishioner/")) return rawFetch(input, init);
+        const method = (init?.method || (input instanceof Request ? input.method : "GET")).toUpperCase();
+        if (method !== "GET") {
+          login();
+          return new Response(JSON.stringify({ message: "\uB85C\uADF8\uC778 \uD6C4 \uC774\uC6A9\uD574 \uC8FC\uC138\uC694." }), { status: 401, headers: { "Content-Type": "application/json" } });
+        }
+        const r = await rawFetch(publicUrl(url2.href), init);
+        if (r.status === 401 || r.status === 403) login();
+        return r;
+      };
+      document.body.classList.add("member-guest");
+      render(parish);
+      const heading = shell.querySelector(".member-home>h1");
+      if (heading) heading.textContent = `${parish.name} \uC131\uB2F9\uC5D0 \uC624\uC2E0 \uAC83\uC744 \uD658\uC601\uD569\uB2C8\uB2E4.`;
+      const copy = shell.querySelector(".member-home>p");
+      if (copy) copy.textContent = "\uB85C\uADF8\uC778 \uC5C6\uC774 \uB458\uB7EC\uBCF4\uB294 \uC911\uC785\uB2C8\uB2E4. \uC800\uC7A5\xB7\uC218\uC815\xB7\uC0AD\uC81C \uB4F1 \uBCC0\uACBD \uC791\uC5C5\uC740 \uB85C\uADF8\uC778 \uD6C4 \uC774\uC6A9\uD574 \uC8FC\uC138\uC694.";
+      const profile = document.querySelector(".member-profile");
+      if (profile) {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "guest-dashboard-login";
+        b.textContent = "\uB85C\uADF8\uC778";
+        b.onclick = login;
+        profile.append(b);
+      }
+      const change = document.createElement("a");
+      change.href = "/parishioner/?browse=1";
+      change.textContent = "\uC131\uB2F9 \uBCC0\uACBD";
+      change.className = "guest-change-parish";
+      document.querySelector(".member-profile")?.append(change);
+      const logout = document.querySelector("#member-logout");
+      if (logout) {
+        logout.textContent = "\uB85C\uADF8\uC778";
+        logout.onclick = login;
+      }
+      document.addEventListener("click", (e) => {
+        const button = e.target.closest("button,a");
+        if (!button || loginDialog.contains(button)) return;
+        const text = button.textContent?.trim() || "";
+        if (/저장|삭제|수정|작성|등록|생성|가입|신청|탈퇴|좋아요|공감|봉헌|내 정보|개인정보|로그아웃/.test(text) || button.matches("[data-prayer-reaction],[data-public-prayer-reaction],#member-notification-button,#member-privacy,#member-logout")) {
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          login();
+        }
+      }, true);
+      document.addEventListener("submit", (e) => {
+        if (loginDialog.contains(e.target)) return;
+        const form = e.target;
+        const submit2 = e.submitter;
+        const text = submit2?.textContent || "";
+        if (/조회|검색/.test(text) || form.matches('[role="search"]')) return;
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        login();
+      }, true);
+      const rewrite = (root) => root.querySelectorAll("[src],[href]").forEach((node) => {
+        for (const attr of ["src", "href"]) {
+          const value = node.getAttribute(attr);
+          if (value?.startsWith("/api/parishioner/")) node.setAttribute(attr, publicUrl(value));
+        }
+      });
+      rewrite(document);
+      new MutationObserver((records) => records.forEach((r) => r.addedNodes.forEach((n) => {
+        if (n instanceof Element) {
+          rewrite(n);
+          for (const attr of ["src", "href"]) {
+            const value = n.getAttribute(attr);
+            if (value?.startsWith("/api/parishioner/")) n.setAttribute(attr, publicUrl(value));
+          }
+        }
+      }))).observe(document.body, { childList: true, subtree: true });
+    }
+    if (parish) {
+      activate();
+      return;
+    }
+    shell.innerHTML = '<section class="guest-dashboard-picker"><h1>\uC2E0\uC559\uC0DD\uD65C \uC774\uC5B4\uAC00\uAE30</h1><p>\uC131\uB2F9\uC744 \uC120\uD0DD\uD558\uBA74 \uC2E0\uB3C4 \uBA54\uC778 \uD654\uBA74\uC744 \uB85C\uADF8\uC778 \uC5C6\uC774 \uBCFC \uC218 \uC788\uC2B5\uB2C8\uB2E4.</p><label>\uC131\uB2F9 \uC120\uD0DD<select aria-label="\uB458\uB7EC\uBCFC \uC131\uB2F9"><option value="">\uC131\uB2F9\uC744 \uC120\uD0DD\uD574 \uC8FC\uC138\uC694</option></select></label><button class="green-button" data-browse type="button" disabled>\uB85C\uADF8\uC778 \uC5C6\uC774 \uB458\uB7EC\uBCF4\uAE30</button><button class="green-outline" data-login type="button">\uB85C\uADF8\uC778</button></section>';
+    const select = shell.querySelector("select");
+    parishes.forEach((p) => select.add(new Option([p.name, p.diocese].filter(Boolean).join(" \xB7 "), String(p.id))));
+    select.onchange = () => {
+      parish = parishes.find((p) => Number(p.id) === Number(select.value));
+      shell.querySelector("[data-browse]").disabled = !parish;
+    };
+    shell.querySelector("[data-browse]").onclick = activate;
+    shell.querySelector("[data-login]").onclick = login;
+  }
+
+  // src/client/parishioner-guest.ts
+  async function mountGuestFaith() {
+    const apex = location.hostname.toLowerCase() === "paxlink.kr";
+    let target = new URLSearchParams(location.search).get("open") || (apex ? "home" : null);
+    if (!target || !(apex ? ["home", "prayer-dream", "memorial", "gospel-note"] : ["prayer-dream", "memorial", "gospel-note"]).includes(target)) return;
+    const context = await fetch(apex ? "/api/public/faith-parishes" : "/api/parish-context");
+    if (!context.ok) return;
+    const data = await context.json();
+    const parishes = apex ? data : [];
+    let parish = apex ? parishes.find((p) => Number(p.id) === Number(new URLSearchParams(location.search).get("parishId"))) || { id: 0, name: "\uC131\uB2F9 \uC120\uD0DD" } : data;
+    if (document.body.classList.contains("member-authenticated")) return;
+    const labels2 = { "prayer-dream": "\uAE30\uB3C4\uB4DC\uB9BC", memorial: "\uBE5B\uC758 \uBC29", "gospel-note": "\uBCF5\uC74C\uB178\uD2B8" };
+    if (apex) {
+      Object.assign(labels2, { home: "\uC131\uB2F9 \uC18C\uC2DD" });
+    }
+    const shell = document.querySelector(".member-shell");
+    const layer = document.createElement("section");
+    layer.className = "guest-faith";
+    layer.innerHTML = '<header><a href="/">\u2039 \uC131\uB2F9 \uCCAB \uD654\uBA74</a><button type="button" data-login>\uB85C\uADF8\uC778</button><h1></h1><p>\uACF5\uAC1C\uB41C \uB0B4\uC6A9\uC744 \uC790\uC720\uB86D\uAC8C \uC77D\uC5B4 \uBCF4\uC138\uC694. \uC791\uC131\uACFC \uCC38\uC5EC\uB294 \uB85C\uADF8\uC778 \uD6C4 \uC774\uC6A9\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4.</p></header><nav></nav><main aria-live="polite"></main>';
+    if (apex) {
+      layer.classList.add("guest-apex");
+      layer.querySelector("header a").textContent = "\u2039 Paxlink \uD648";
+    }
+    layer.querySelector("h1").textContent = `${parish.name} \xB7 ${labels2[target]}`;
+    const nav = layer.querySelector("nav"), main = layer.querySelector("main");
+    const syncParish = () => {
+      layer.querySelector("h1").textContent = `${parish.name} \xB7 ${labels2[target]}`;
+      nav.querySelectorAll("a").forEach((a) => {
+        const url = new URL(a.href);
+        if (apex) url.searchParams.set("parishId", String(parish.id));
+        a.href = url.href;
+      });
+    };
+    let entered = !apex || Boolean(parish.id);
+    let selector = null;
+    if (apex) {
+      const label = document.createElement("label");
+      label.className = "guest-parish-selector";
+      label.textContent = "\uC131\uB2F9 \uC120\uD0DD ";
+      const select = document.createElement("select");
+      selector = select;
+      select.setAttribute("aria-label", "\uB458\uB7EC\uBCFC \uC131\uB2F9");
+      select.add(new Option("\uC131\uB2F9\uC744 \uC120\uD0DD\uD574 \uC8FC\uC138\uC694", ""));
+      parishes.forEach((p) => select.add(new Option([p.name, p.diocese].filter(Boolean).join(" \xB7 "), String(p.id))));
+      select.value = parish.id ? String(parish.id) : "";
+      select.onchange = () => {
+        parish = parishes.find((p) => Number(p.id) === Number(select.value)) || { id: 0, name: "\uC131\uB2F9 \uC120\uD0DD" };
+        if (!parish.id) entered = false;
+        const url = new URL(location.href);
+        url.searchParams.set("parishId", String(parish.id));
+        url.searchParams.set("open", target);
+        history.replaceState(null, "", url);
+        syncParish();
+        void load2();
+      };
+      label.append(select);
+      layer.querySelector("header").append(label);
+    }
+    const switchMenu = (key) => {
+      if (!labels2[key]) return;
+      target = key;
+      layer.querySelector("h1").textContent = `${parish.name} \xB7 ${labels2[key]}`;
+      nav.querySelectorAll("a").forEach((a) => {
+        if (new URL(a.href).searchParams.get("open") === key) a.setAttribute("aria-current", "page");
+        else a.removeAttribute("aria-current");
+      });
+      void load2();
+    };
+    Object.entries(labels2).forEach(([key, label]) => {
+      const link = document.createElement("a");
+      link.href = `/parishioner?open=${key}`;
+      link.textContent = label;
+      if (key === target) link.setAttribute("aria-current", "page");
+      link.onclick = (e) => {
+        if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+        e.preventDefault();
+        history.pushState(null, "", link.href);
+        switchMenu(key);
+      };
+      nav.append(link);
+    });
+    syncParish();
+    const pop = () => {
+      const params = new URLSearchParams(location.search), key = params.get("open") || (apex ? "home" : null);
+      if (apex) {
+        parish = parishes.find((p) => Number(p.id) === Number(params.get("parishId"))) || { id: 0, name: "\uC131\uB2F9 \uC120\uD0DD" };
+        entered = Boolean(parish.id);
+        if (selector) selector.value = parish.id ? String(parish.id) : "";
+        syncParish();
+      }
+      if (key) switchMenu(key);
+    };
+    window.addEventListener("popstate", pop);
+    const el = (tag, text) => {
+      const e = document.createElement(tag);
+      e.textContent = text;
+      return e;
+    };
+    const marker = document.createComment("login-shell");
+    shell.before(marker);
+    const loginDialog = document.createElement("dialog");
+    loginDialog.className = "guest-login-dialog";
+    loginDialog.setAttribute("aria-label", "\uB85C\uADF8\uC778");
+    const close = document.createElement("button");
+    close.type = "button";
+    close.className = "guest-login-close";
+    close.textContent = "\uB2EB\uAE30 \xB7 \uACC4\uC18D \uC77D\uAE30";
+    close.onclick = () => loginDialog.close();
+    loginDialog.append(close);
+    document.body.append(layer, loginDialog);
+    shell.hidden = true;
+    let opener = null;
+    loginDialog.addEventListener("close", () => {
+      if (!document.body.classList.contains("member-authenticated")) {
+        shell.hidden = true;
+        marker.after(shell);
+        opener?.focus({ preventScroll: true });
+      }
+      document.body.classList.remove("guest-login-open");
+    });
+    const login = async () => {
+      if (loginDialog.open) return;
+      if (apex && parish.id) {
+        const id = document.querySelector("#member-parish-id"), search2 = document.querySelector("#member-parish-search");
+        if (id) id.value = String(parish.id);
+        if (search2) search2.value = parish.name;
+      }
+      opener = document.activeElement;
+      loginDialog.append(shell);
+      shell.hidden = false;
+      document.body.classList.add("guest-login-open");
+      loginDialog.showModal();
+      document.querySelector("#member-email")?.focus({ preventScroll: true });
+    };
+    const action = (text) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.textContent = text;
+      b.onclick = () => void login().catch(() => {
+        b.textContent = "\uC5F0\uACB0 \uC624\uB958 \xB7 \uB2E4\uC2DC \uB85C\uADF8\uC778";
+      });
+      return b;
+    };
+    layer.querySelector("[data-login]").onclick = () => void login();
+    const observer = new MutationObserver(() => {
+      if (document.body.classList.contains("member-authenticated")) {
+        marker.after(shell);
+        shell.hidden = false;
+        loginDialog.close();
+        loginDialog.remove();
+        marker.remove();
+        layer.remove();
+        window.removeEventListener("popstate", pop);
+        observer.disconnect();
+      }
+    });
+    observer.observe(document.body, { attributes: true, attributeFilter: ["class"] });
+    async function get(url) {
+      const address = new URL(url, location.origin);
+      if (apex) address.searchParams.set("parishId", String(parish.id));
+      const r = await fetch(address.pathname + address.search, { cache: "no-store" });
+      if (!r.ok) throw new Error("\uB0B4\uC6A9\uC744 \uBD88\uB7EC\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4. \uB2E4\uC2DC \uC2DC\uB3C4\uD574 \uC8FC\uC138\uC694.");
+      return r.json();
+    }
+    const month = new Date(Date.now() + 9 * 36e5).toISOString().slice(0, 7);
+    let selectedMonth = month, version = 0;
+    async function detail(id) {
+      const v = ++version;
+      main.replaceChildren(el("p", "\uCD94\uBAA8 \uACF5\uAC04\uC744 \uBD88\uB7EC\uC624\uB294 \uC911\uC785\uB2C8\uB2E4."));
+      try {
+        const d = await get(`/api/public/faith/memorial/${id}`);
+        if (v !== version) return;
+        const back = el("button", "\u2039 \uBAA9\uB85D\uC73C\uB85C");
+        back.onclick = () => void load2();
+        main.replaceChildren(back, el("h2", `${d.name}${d.baptismalName ? " (" + d.baptismalName + ")" : ""}`));
+        for (const photo of d.photos) {
+          const img = document.createElement("img");
+          img.src = photo;
+          img.alt = "\uCD94\uBAA8 \uC0AC\uC9C4";
+          main.append(img);
+        }
+        for (const key of ["deathDate", "historyText", "ordinationText", "biography"]) if (d[key]) main.append(el("p", d[key]));
+        main.append(action("\uCD94\uBAA8\uAE00 \uC791\uC131"), action("\uAE30\uB3C4 \uBD09\uD5CC"));
+        d.entries.forEach((e) => {
+          const a = el("article", "");
+          a.append(el("h3", e.entryType === "prayer" ? "\uAE30\uB3C4" : "\uCD94\uBAA8\uAE00"), el("p", e.content));
+          main.append(a);
+        });
+      } catch (e) {
+        showError(e, () => void detail(id));
+      }
+    }
+    function showError(e, retry) {
+      main.replaceChildren(el("p", e.message));
+      const b = el("button", "\uB2E4\uC2DC \uBD88\uB7EC\uC624\uAE30");
+      b.onclick = retry;
+      main.append(b);
+    }
+    async function load2() {
+      const v = ++version;
+      nav.hidden = apex && !entered;
+      layer.classList.toggle("guest-apex-selection", apex && !entered);
+      if (apex && !entered) {
+        layer.querySelector("h1").textContent = "\uC2E0\uC559\uC0DD\uD65C \uC774\uC5B4\uAC00\uAE30";
+        main.replaceChildren(el("h2", "\uC5B4\uB290 \uC131\uB2F9\uC744 \uB458\uB7EC\uBCF4\uC2DC\uACA0\uC5B4\uC694?"), el("p", parishes.length ? "\uC131\uB2F9\uC744 \uC120\uD0DD\uD558\uACE0 \uB85C\uADF8\uC778 \uC5C6\uC774 \uC18C\uC2DD\uACFC \uACF5\uAC1C\uB41C \uB0B4\uC6A9\uC744 \uC77D\uC5B4 \uBCF4\uC138\uC694." : "\uD604\uC7AC \uB458\uB7EC\uBCFC \uC218 \uC788\uB294 \uC131\uB2F9\uC774 \uC5C6\uC2B5\uB2C8\uB2E4."));
+        const browse = document.createElement("button");
+        browse.type = "button";
+        browse.className = "guest-browse-button";
+        browse.textContent = "\uB85C\uADF8\uC778 \uC5C6\uC774 \uB458\uB7EC\uBCF4\uAE30";
+        browse.disabled = !parish.id;
+        browse.onclick = () => {
+          entered = true;
+          syncParish();
+          void load2();
+        };
+        main.append(browse, action("\uB85C\uADF8\uC778\uD558\uACE0 \uC774\uC6A9\uD558\uAE30"));
+        return;
+      }
+      main.replaceChildren(el("p", "\uB0B4\uC6A9\uC744 \uBD88\uB7EC\uC624\uB294 \uC911\uC785\uB2C8\uB2E4."));
+      try {
+        const d = await get(`/api/public/faith/${target}?month=${selectedMonth}`);
+        if (v !== version) return;
+        main.replaceChildren();
+        if (target === "home") {
+          main.append(el("h2", `${parish.name} \uC131\uB2F9 \uC18C\uC2DD`), el("p", "\uBE44\uD68C\uC6D0\uC73C\uB85C \uB458\uB7EC\uBCF4\uB294 \uC911\uC785\uB2C8\uB2E4. \uC800\uC7A5\xB7\uC218\uC815\xB7\uC0AD\uC81C \uB4F1 \uBCC0\uACBD \uC791\uC5C5\uC740 \uB85C\uADF8\uC778 \uD6C4 \uAD8C\uD55C\uC5D0 \uB530\uB77C \uC774\uC6A9\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4."), action("\uB85C\uADF8\uC778"));
+          main.append(el("h2", "\uACF5\uC9C0\uC0AC\uD56D"));
+          if (!d.notices.length) main.append(el("p", "\uB4F1\uB85D\uB41C \uACF5\uC9C0\uC0AC\uD56D\uC774 \uC5C6\uC2B5\uB2C8\uB2E4."));
+          d.notices.forEach((n) => {
+            const box = document.createElement("details");
+            box.className = "guest-notice";
+            box.append(el("summary", n.title), el("p", n.content));
+            main.append(box);
+          });
+          main.append(el("h2", "\uC774\uBC88 \uB2EC \uC131\uB2F9 \uC77C\uC815"));
+          if (!d.items.length) main.append(el("p", "\uB4F1\uB85D\uB41C \uC77C\uC815\uC774 \uC5C6\uC2B5\uB2C8\uB2E4."));
+          d.items.forEach((s) => {
+            const a = el("article", "");
+            a.append(el("h3", s.title), el("p", [s.scheduleDate, s.startTime, s.location].filter(Boolean).join(" \xB7 ")), el("p", s.content || ""), action("\uC77C\uC815 \uC800\uC7A5"));
+            main.append(a);
+          });
+          return;
+        }
+        main.append(action(target === "prayer-dream" ? "\uAE30\uB3C4\uBB38 \uC791\uC131" : target === "memorial" ? "\uCD94\uBAA8 \uACF5\uAC04 \uB4F1\uB85D" : "\uC740\uCD1D\uC77C\uAE30 \uC791\uC131"));
+        if (target === "gospel-note") {
+          const label = el("label", "\uC870\uD68C \uC6D4 "), input = document.createElement("input");
+          input.type = "month";
+          input.value = selectedMonth;
+          input.onchange = () => {
+            if (input.value) {
+              selectedMonth = input.value;
+              void load2();
+            }
+          };
+          label.append(input);
+          main.append(label, el("p", "\uB098\uC758 \uC740\uCD1D\uC77C\uAE30\uC640 \uAC15\uB860 \uB178\uD2B8\uB294 \uB85C\uADF8\uC778 \uD6C4 \uD655\uC778\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4."));
+        }
+        if (!d.items.length) main.append(el("p", "\uB4F1\uB85D\uB41C \uACF5\uAC1C \uB0B4\uC6A9\uC774 \uC5C6\uC2B5\uB2C8\uB2E4."));
+        d.items.forEach((item) => {
+          const article = el("article", "");
+          if (target === "prayer-dream") {
+            article.append(el("h2", "\uAE30\uB3C4\uB4DC\uB9BC"), el("p", item.content), action("\uD568\uAED8 \uAE30\uB3C4\uD558\uAE30"), action("\uB313\uAE00 \uC791\uC131"));
+            item.comments.forEach((c) => article.append(el("blockquote", c.content)));
+          } else if (target === "memorial") {
+            article.append(el("h2", item.name), el("p", item.biography || ""));
+            const b = el("button", "\uCD94\uBAA8 \uACF5\uAC04 \uBCF4\uAE30");
+            b.onclick = () => void detail(item.id);
+            article.append(b);
+          } else {
+            article.append(el("h2", item.title), el("p", [item.scheduleDate, item.startTime, item.location].filter(Boolean).join(" \xB7 ")), el("p", item.content || ""));
+            if (item.massOrder.length) {
+              article.append(el("h3", "\uBBF8\uC0AC \uC21C\uC11C"));
+              const list = el("ol", "");
+              item.massOrder.forEach((step) => list.append(el("li", step)));
+              article.append(list);
+            }
+            article.append(action("\uAC15\uB860 \uB178\uD2B8 \uC791\uC131"), action("\uC77C\uC815 \uC800\uC7A5"));
+          }
+          main.append(article);
+        });
+      } catch (e) {
+        if (v === version) showError(e, () => void load2());
+      }
+    }
+    await load2();
+  }
+
+  // src/client/parishioner-parish-details.ts
+  function renderPastoralGoals(body, data) {
+    if (!data.plans.length) {
+      body.append(textElement("p", "\uC544\uC9C1 \uB4F1\uB85D\uB41C \uC0AC\uBAA9 \uBAA9\uD45C\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4."));
+      return;
+    }
+    const label = document.createElement("label");
+    label.textContent = "\uC5F0\uB3C4 ";
+    const select = document.createElement("select");
+    select.setAttribute("aria-label", "\uC0AC\uBAA9 \uBAA9\uD45C \uC5F0\uB3C4");
+    data.plans.forEach((plan) => select.add(new Option(`${plan.year}\uB144`, String(plan.year))));
+    const current = (/* @__PURE__ */ new Date()).getFullYear();
+    select.value = String(data.plans.find((plan) => plan.year === current)?.year ?? data.plans[0].year);
+    const content = document.createElement("div");
+    content.className = "member-pastoral-content";
+    const render = () => {
+      const selected = data.plans.find((plan2) => plan2.year === Number(select.value));
+      const plan = selected.content;
+      content.replaceChildren(textElement("h4", `${selected.year}\uB144 \uC0AC\uBAA9 \uBAA9\uD45C`), textElement("h2", plan.theme));
+      if (plan.scripture) content.append(textElement("blockquote", plan.scripture));
+      if (plan.direction) content.append(textElement("h4", "\uC0AC\uBAA9 \uBC29\uD5A5"), textElement("p", plan.direction));
+      if (plan.goals.length) content.append(textElement("h4", "\uC911\uC810 \uBAA9\uD45C \uBC0F \uC2E4\uCC9C\uACC4\uD68D"));
+      plan.goals.forEach((goal, index) => {
+        const article = document.createElement("article");
+        article.className = "member-transport-guide";
+        if (goal.area) article.append(textElement("strong", goal.area));
+        article.append(textElement("h4", `${index + 1}. ${goal.title}`));
+        if (goal.plan) article.append(textElement("p", goal.plan));
+        content.append(article);
+      });
+    };
+    select.onchange = render;
+    label.append(select);
+    body.append(label, content);
+    render();
+  }
+  function safeUrl(value) {
+    if (/^\/(?!\/)/.test(value) && !value.includes("\\")) return value;
+    try {
+      const url = new URL(value);
+      return ["https:", "http:"].includes(url.protocol) ? url.href : "";
+    } catch {
+      return "";
+    }
+  }
+  function cleanPatronContent(html) {
+    const template = document.createElement("template");
+    template.innerHTML = html;
+    template.content.querySelectorAll("script,style,iframe,object,embed,svg,math,template").forEach((element) => element.remove());
+    const allowed = /* @__PURE__ */ new Set(["P", "BR", "STRONG", "B", "EM", "I", "U", "UL", "OL", "LI", "H2", "H3", "BLOCKQUOTE", "A", "IMG"]);
+    const clean = (root) => {
+      [...root.children].forEach((element) => {
+        clean(element);
+        if (!allowed.has(element.tagName)) {
+          element.replaceWith(...element.childNodes);
+          return;
+        }
+        const href = safeUrl(element.getAttribute("href") ?? "");
+        const src = safeUrl(element.getAttribute("src") ?? "");
+        const alt = element.getAttribute("alt") ?? "\uC8FC\uBCF4 \uC131\uC778";
+        [...element.attributes].forEach((attribute) => element.removeAttribute(attribute.name));
+        if (element.tagName === "A") {
+          if (!href) {
+            element.replaceWith(...element.childNodes);
+            return;
+          }
+          element.setAttribute("href", href);
+          element.setAttribute("target", "_blank");
+          element.setAttribute("rel", "noopener noreferrer");
+        }
+        if (element.tagName === "IMG") {
+          if (!src) {
+            element.remove();
+            return;
+          }
+          element.setAttribute("src", src);
+          element.setAttribute("alt", alt);
+        }
+      });
+    };
+    clean(template.content);
+    return template.content;
+  }
+  function textElement(tag, text) {
+    const element = document.createElement(tag);
+    element.textContent = text;
+    return element;
+  }
+  function renderLocation(body, data) {
+    body.append(textElement("h4", data.name));
+    if (data.address.trim()) {
+      body.append(textElement("p", [data.address, data.addressDetail].filter(Boolean).join(" ")));
+      const query = encodeURIComponent(data.address.trim());
+      const map = document.createElement("iframe");
+      map.title = `${data.name} \uC704\uCE58 \uC9C0\uB3C4`;
+      map.src = `https://maps.google.com/maps?q=${query}&hl=ko&z=16&output=embed`;
+      map.referrerPolicy = "no-referrer-when-downgrade";
+      map.allowFullscreen = true;
+      body.append(map);
+      const link = document.createElement("a");
+      link.textContent = "\uC9C0\uB3C4 \uD06C\uAC8C \uBCF4\uAE30 \u2197";
+      link.href = `https://www.google.com/maps/search/?api=1&query=${query}`;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      body.append(link);
+    } else body.append(textElement("p", "\uC544\uC9C1 \uB4F1\uB85D\uB41C \uC131\uB2F9 \uC8FC\uC18C\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4."));
+    body.append(textElement("h4", "\uAD50\uD1B5\uD3B8 \uC548\uB0B4"));
+    if (!data.transportGuides.length) body.append(textElement("p", "\uC544\uC9C1 \uB4F1\uB85D\uB41C \uAD50\uD1B5\uD3B8 \uC548\uB0B4\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4."));
+    for (const guide of data.transportGuides) {
+      const article = document.createElement("article");
+      article.className = "member-transport-guide";
+      article.append(textElement("strong", guide.mode));
+      if (guide.route) article.append(textElement("b", guide.route));
+      article.append(textElement("p", guide.details));
+      body.append(article);
+    }
+  }
+  async function openMemberParishDetail(kind) {
+    document.querySelector(".member-parish-information-modal")?.remove();
+    const opener = document.activeElement;
+    document.body.classList.remove("member-menu-open");
+    const menu2 = document.querySelector("#member-mobile-menu");
+    menu2?.classList.remove("open");
+    menu2?.setAttribute("aria-hidden", "true");
+    const backdrop = document.querySelector("#member-menu-backdrop");
+    if (backdrop) backdrop.hidden = true;
+    const menuButton = document.querySelector("#member-menu-button");
+    menuButton?.setAttribute("aria-expanded", "false");
+    menuButton?.setAttribute("aria-label", "\uBA54\uB274 \uC5F4\uAE30");
+    const layer = document.createElement("div");
+    layer.className = "member-modal member-parish-information-modal member-parish-detail-modal";
+    layer.innerHTML = `<section class="member-modal-box" role="dialog" aria-modal="true" aria-labelledby="member-parish-detail-title"><h3 id="member-parish-detail-title"></h3><div class="member-modal-body" aria-live="polite"></div><footer><button class="green-outline" type="button">\uB2EB\uAE30</button></footer></section>`;
+    layer.querySelector("h3").textContent = `\uC131\uB2F9\uC815\uBCF4 \xB7 ${{ "location-guide": "\uC704\uCE58 \uC548\uB0B4", "patron-saint": "\uC8FC\uBCF4 \uC131\uC778", "pastoral-goals": "\uC0AC\uBAA9 \uBAA9\uD45C" }[kind]}`;
+    const body = layer.querySelector(".member-modal-body");
+    const close = layer.querySelector("footer button");
+    const controller = new AbortController();
+    close.onclick = () => {
+      controller.abort();
+      layer.remove();
+      (menuButton ?? opener)?.focus();
+    };
+    layer.onkeydown = (event) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        close.click();
+      }
+    };
+    document.body.append(layer);
+    close.focus();
+    const load2 = async () => {
+      body.replaceChildren(textElement("p", "\uC131\uB2F9 \uC815\uBCF4\uB97C \uBD88\uB7EC\uC624\uB294 \uC911\uC785\uB2C8\uB2E4."));
+      try {
+        const response = await fetch(`/api/parishioner/${kind}`, { cache: "no-store", signal: controller.signal });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message ?? "\uC131\uB2F9 \uC815\uBCF4\uB97C \uBD88\uB7EC\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4.");
+        if (!layer.isConnected) return;
+        body.replaceChildren();
+        if (kind === "location-guide") renderLocation(body, data);
+        else if (kind === "pastoral-goals") renderPastoralGoals(body, data);
+        else {
+          const patron = data;
+          body.append(textElement("h4", patron.name));
+          const content = document.createElement("div");
+          content.className = "member-patron-content";
+          content.append(cleanPatronContent(patron.contentHtml));
+          if (!content.textContent?.trim() && !content.querySelector("img")) content.append(textElement("p", "\uC544\uC9C1 \uB4F1\uB85D\uB41C \uC8FC\uBCF4 \uC131\uC778 \uC548\uB0B4\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4."));
+          body.append(content);
+        }
+      } catch (error) {
+        if (!layer.isConnected || controller.signal.aborted) return;
+        body.replaceChildren(textElement("p", error.message));
+        const retry = document.createElement("button");
+        retry.type = "button";
+        retry.className = "green-outline";
+        retry.textContent = "\uB2E4\uC2DC \uBD88\uB7EC\uC624\uAE30";
+        retry.onclick = () => void load2();
+        body.append(retry);
+      }
+    };
+    await load2();
+  }
+  function mountParishDetailMenus() {
+    const submenu = document.querySelector("#member-parish-information-menu .member-parish-information-submenu");
+    if (!submenu) return;
+    for (const [kind, label] of [["location-guide", "\uC704\uCE58 \uC548\uB0B4"], ["patron-saint", "\uC8FC\uBCF4 \uC131\uC778"], ["pastoral-goals", "\uC0AC\uBAA9 \uBAA9\uD45C"]]) {
+      if (submenu.querySelector(`[data-member-parish-detail="${kind}"]`)) continue;
+      const button = document.createElement("button");
+      button.type = "button";
+      button.dataset.memberParishDetail = kind;
+      button.textContent = label;
+      button.onclick = () => void openMemberParishDetail(kind);
+      submenu.append(button);
+    }
+  }
+  new MutationObserver(mountParishDetailMenus).observe(document.body, { childList: true, subtree: true });
+  mountParishDetailMenus();
+  document.head.insertAdjacentHTML("beforeend", `<style>
+#member-parish-information-menu [data-member-parish-detail="location-guide"]:before{content:"05"}
+#member-parish-information-menu [data-member-parish-detail="patron-saint"]:before{content:"06"}
+#member-parish-information-menu [data-member-parish-detail="pastoral-goals"]:before{content:"07"}
+.member-pastoral-content p,.member-pastoral-content blockquote{white-space:pre-wrap;line-height:1.8}
+.member-pastoral-content h2{font-size:20px;line-height:1.5}
+.member-parish-detail-modal select{padding:10px;margin:0 0 16px 8px;border:1px solid var(--line);border-radius:8px;background:white;color:var(--green);font:inherit}
+.member-parish-detail-modal .member-modal-box{width:min(92vw,800px)}
+.member-parish-detail-modal .member-modal-body{overflow-wrap:anywhere}
+.member-parish-detail-modal h4{margin:8px 0 14px;font-size:15px;color:var(--green)}
+.member-parish-detail-modal iframe{display:block;box-sizing:border-box;width:100%;height:340px;margin:16px 0;border:1px solid var(--line);border-radius:12px}
+.member-parish-detail-modal a{color:var(--green)}
+.member-parish-detail-modal a+h4{margin-top:26px}
+.member-transport-guide{margin:10px 0;padding:16px;border:1px solid var(--line);border-radius:12px;background:#f7fbf9}
+.member-transport-guide strong{color:var(--green)}
+.member-transport-guide b{margin-left:12px}
+.member-transport-guide p{white-space:pre-wrap;line-height:1.8}
+.member-patron-content{line-height:1.9}
+.member-patron-content img{display:block;max-width:100%;height:auto;margin:12px auto}
+@media(max-width:600px){.member-parish-detail-modal iframe{height:280px}.member-parish-detail-modal .member-modal-body{padding:16px}}
+</style>`);
+
   // src/client/session-countdown.ts
   var options = null;
   var deadline = 0;
@@ -2611,6 +3257,12 @@
   function mountMemberFaithGateway() {
     if (!document.body.classList.contains("member-authenticated") || document.querySelector(".member-faith-gateway") || document.body.dataset.gatewayShown) return;
     const hostTarget = new URLSearchParams(location.search).get("open");
+    if (location.hostname.toLowerCase() === "paxlink.kr") {
+      document.body.dataset.gatewayShown = "1";
+      const requested = hostTarget || new URLSearchParams(location.search).get("menu");
+      if (requested && Object.hasOwn(gatewayTargets, requested)) requestAnimationFrame(() => gatewayTargets[requested]());
+      return;
+    }
     if (hostTarget && ["prayer-dream", "memorial", "gospel-note"].includes(hostTarget)) {
       mountParishHostFeature(hostTarget);
       return;
@@ -3630,10 +4282,10 @@ body.parish-host-feature-open{overflow:hidden}.parish-host-feature{position:fixe
     div.textContent = value;
     return div.innerHTML;
   }
-  function renderMember(user) {
+  function renderMember(user, guest = false) {
     const baptismal = user.baptismalName ?? user.baptismal_name;
     const parish = user.parishName ?? user.parish_name ?? "";
-    startSessionCountdown({ logoutUrl: "/api/parishioner-auth/logout", redirectUrl: "/parishioner", color: "#15956f" });
+    if (!guest) startSessionCountdown({ logoutUrl: "/api/parishioner-auth/logout", redirectUrl: "/parishioner", color: "#15956f" });
     document.body.classList.add("member-authenticated");
     document.body.insertAdjacentHTML("afterbegin", `<header class="member-topbar"><a class="member-logo" href="/parishioner"><b>P</b> Paxlink</a><div class="member-profile"><button id="member-notification-button" type="button" aria-label="\uC54C\uB9BC">\u{1F514}<b hidden>0</b></button><span><strong>${escapeHtml(user.name)}</strong>${baptismal ? ` (${escapeHtml(baptismal)})` : ""}<small>${escapeHtml(parish)} \xB7 ${escapeHtml(user.email)}</small></span><button id="member-menu-button" class="member-menu-button" type="button" aria-label="\uBA54\uB274 \uC5F4\uAE30" aria-expanded="false" aria-controls="member-mobile-menu"><i></i><i></i><i></i></button></div></header><div id="member-menu-backdrop" class="member-menu-backdrop" hidden></div><aside id="member-mobile-menu" class="member-mobile-menu" aria-hidden="true"><header><strong>\uC804\uCCB4 \uBA54\uB274</strong><button id="member-menu-close" type="button" aria-label="\uBA54\uB274 \uB2EB\uAE30">\xD7</button></header><div class="member-menu-user"><b>${escapeHtml(user.name)}${baptismal ? ` (${escapeHtml(baptismal)})` : ""}</b><small>${escapeHtml(parish)}</small></div><nav><button data-member-target=".member-schedule-section" type="button">\uC131\uB2F9 \uC77C\uC815</button><button data-member-target=".member-groups" type="button">\uB2E8\uCCB4</button><button data-member-target=".member-shrines" type="button">\uC131\uC9C0\uC21C\uB840</button><button data-member-target=".member-sharing" type="button">\uB098\uB214</button><button data-member-target=".member-videos" type="button">\uB3D9\uC601\uC0C1</button><button data-member-target=".member-notices" type="button">\uACF5\uC9C0\uC0AC\uD56D</button></nav><footer><button id="member-privacy" type="button">\uAC1C\uC778\uC815\uBCF4</button><button id="member-logout" type="button">\uB85C\uADF8\uC544\uC6C3</button></footer></aside>`);
     document.querySelector(".member-shell").innerHTML = `<section class="member-home"><h1>${escapeHtml(user.name)}\uB2D8, \uD658\uC601\uD569\uB2C8\uB2E4.</h1><p>\uC2E0\uB3C4 \uC11C\uBE44\uC2A4\uC5D0 \uB85C\uADF8\uC778\uB418\uC5B4 \uC788\uC2B5\uB2C8\uB2E4.</p><section class="member-notices"><header><h2>\uACF5\uC9C0\uC0AC\uD56D</h2><span id="member-notice-count"></span></header><div id="member-notice-list"></div><p id="member-notice-empty" hidden>\uB4F1\uB85D\uB41C \uACF5\uC9C0\uC0AC\uD56D\uC774 \uC5C6\uC2B5\uB2C8\uB2E4.</p></section></section>`;
@@ -3660,7 +4312,7 @@ body.parish-host-feature-open{overflow:hidden}.parish-host-feature{position:fixe
       await fetch("/api/parishioner-auth/logout", { method: "POST" });
       location.href = "/parishioner";
     });
-    mountRealtimeNotifications();
+    if (!guest) mountRealtimeNotifications();
     void loadNotices();
   }
   function arrangeMemberProfile() {
@@ -5370,7 +6022,7 @@ body.parish-host-feature-open{overflow:hidden}.parish-host-feature{position:fixe
     section.querySelectorAll("[data-pilgrimage-tab]").forEach((button) => button.onclick = () => switchTab(button.dataset.pilgrimageTab));
     section.querySelector('[data-pilgrimage-more="reviews"]').onclick = showMoreMemberReviews;
     section.querySelector('[data-pilgrimage-more="shrines"]').onclick = showMoreMemberShrines;
-    switchTab("reviews");
+    switchTab("shrines");
     void loadMemberShrineReviews();
   }
   function applyMemberShrineVisibility() {
@@ -6204,8 +6856,16 @@ body.parish-host-feature-open{overflow:hidden}.parish-host-feature{position:fixe
   scheduleMemberEnhancements();
   queueMicrotask(mountMemberShrines);
   async function restoreSession() {
-    const response = await fetch("/api/parishioner-auth/me");
-    if (response.ok) renderMember(await response.json());
+    try {
+      const response = await fetch("/api/parishioner-auth/me");
+      if (response.ok) renderMember(await response.json());
+      else if (response.status === 401) {
+        if (location.hostname.toLowerCase() === "paxlink.kr") await mountGuestDashboard((parish) => renderMember({ name: "\uBC29\uBB38\uC790", email: "", parishName: parish.name }, true));
+        else await mountGuestFaith();
+      }
+    } finally {
+      document.documentElement.classList.remove("guest-entry-pending");
+    }
   }
   search.addEventListener("input", () => {
     parishId.value = "";
@@ -6264,6 +6924,10 @@ body.parish-host-feature-open{overflow:hidden}.parish-host-feature{position:fixe
     try {
       const response = await fetch("/api/parishioner-auth/verify", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ parishId: Number(parishId.value), email: email.value, code: code.value.trim() }), signal: controller.signal }), data = await response.json();
       if (!response.ok) throw new Error(data.message);
+      if (document.body.classList.contains("member-guest") || document.querySelector(".guest-dashboard-picker")) {
+        location.reload();
+        return;
+      }
       renderMember(data.user);
       const previous = data.previous;
       if (previous) {
@@ -6710,8 +7374,9 @@ body.parish-host-feature-open{overflow:hidden}.parish-host-feature{position:fixe
   }
   function mountMemberParishInformationMenu() {
     const nav = document.querySelector("#member-mobile-menu>nav"), notice = nav?.querySelector('[data-member-target=".member-notices"]');
-    if (!nav || !notice || nav.querySelector(".member-parish-information-menu")) return;
+    if (!nav || !notice || nav.querySelector("#member-parish-information-menu")) return;
     const wrapper = document.createElement("div");
+    wrapper.id = "member-parish-information-menu";
     wrapper.className = "member-parish-information-menu";
     wrapper.innerHTML = '<button class="member-parish-information-toggle" type="button" aria-expanded="false">\uC131\uB2F9\uC815\uBCF4 <span>\u2304</span></button><div class="member-parish-information-submenu" hidden><button type="button" data-parish-information="basic">\uAE30\uBCF8\uC815\uBCF4</button><button type="button" data-parish-information="history">\uC5F0\uD601</button><button type="button" data-parish-information="contact">\uC131\uB2F9\uC5F0\uB77D\uCC98</button><button type="button" data-parish-information="priests">\uC2E0\uBD80</button></div>';
     notice.insertAdjacentElement("afterend", wrapper);

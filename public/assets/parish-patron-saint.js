@@ -4,7 +4,7 @@
   var panel = document.querySelector("#patron-saint-management");
   var editor = document.querySelector("#patron-editor");
   var preview = document.querySelector("#patron-preview");
-  var allowedTags = /* @__PURE__ */ new Set(["P", "BR", "STRONG", "B", "EM", "I", "U", "UL", "OL", "LI", "H2", "H3", "BLOCKQUOTE", "A"]);
+  var allowedTags = /* @__PURE__ */ new Set(["P", "BR", "STRONG", "B", "EM", "I", "U", "UL", "OL", "LI", "H2", "H3", "BLOCKQUOTE", "A", "IMG"]);
   async function api(url, options) {
     const response = await fetch(url, { ...options, headers: { "Content-Type": "application/json", ...options?.headers ?? {} } });
     const data = await response.json();
@@ -24,8 +24,17 @@
           element.replaceWith(...element.childNodes);
           return;
         }
-        const originalHref = element.getAttribute("href") ?? "";
+        const originalHref = element.getAttribute("href") ?? "", originalSrc = element.getAttribute("src") ?? "", originalAlt = element.getAttribute("alt") ?? "";
         for (const attribute of [...element.attributes]) element.removeAttribute(attribute.name);
+        if (element.tagName === "IMG") {
+          if (!/^https?:\/\//i.test(originalSrc) && !/^\/(?!\/)/.test(originalSrc)) {
+            element.remove();
+            return;
+          }
+          element.setAttribute("src", originalSrc);
+          element.setAttribute("alt", originalAlt);
+          element.setAttribute("style", "display:block;max-width:100%;height:auto;margin:0 auto");
+        }
         if (element.tagName === "A") {
           if (/^https?:\/\//i.test(originalHref)) {
             element.setAttribute("href", originalHref);

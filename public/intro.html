@@ -223,10 +223,37 @@
       .menu-button small { display: none; }
     }
 
+    /* Allocate the viewport height to all landing elements, including the footer. */
+    body { height: 100vh; height: 100svh; min-height: 0; display: flex; flex-direction: column; }
+    .intro {
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      grid-template-rows: minmax(0, .65fr) auto auto auto minmax(0, 1fr) auto auto;
+      justify-items: center;
+      gap: clamp(4px, .9svh, 10px);
+      padding: max(10px, env(safe-area-inset-top)) 14px max(10px, env(safe-area-inset-bottom));
+    }
+    .parish-photo { width: auto; height: 100%; max-height: 246px; max-width: 50vw; min-height: 0; border-width: 3px; }
+    .eyebrow { margin: 0; font-size: clamp(10px, 1.8svh, 18px); }
+    h1 { margin: 0; font-size: clamp(26px, 4.8svh, 54px); line-height: 1.2; }
+    .welcome { margin: 0; font-size: clamp(10px, 1.7svh, 13px); line-height: 1.5; }
+    .light-room { width: auto; height: 100%; max-height: 430px; max-width: 88vw; min-height: 0; margin: 0; container-type: size; }
+    .menu-button { width: 41%; gap: 3px; }
+    .menu-button .icon { font-size: clamp(20px, 12cqh, 50px); }
+    .menu-button strong { font-size: clamp(11px, 5.4cqh, 23px); }
+    .menu-button small { display: block; font-size: clamp(6px, 2.5cqh, 9px); }
+    .core-title { font-size: clamp(15px, 7cqh, 28px); }
+    .hint { margin: 0; font-size: clamp(10px, 1.5svh, 12px); }
+    .credit { margin: 0; padding: 0; font-size: clamp(8px, 1.3svh, 13px); }
+
     @media (prefers-reduced-motion: reduce) {
       .orbit, .star-glow { animation: none; }
     }
   </style>
+<link rel="stylesheet" href="/intro-information.css?v=1">
+<script src="/assets/intro-information.js?v=1" defer></script>
+<script src="/phone-links.js?v=1" defer></script>
 </head>
 <body>
   <main class="intro">
@@ -274,4 +301,15 @@ if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.ser
 (()=>{const mobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||matchMedia("(pointer:coarse)").matches,standalone=matchMedia("(display-mode:standalone)").matches||navigator.standalone;if(!mobile||standalone)return;let promptEvent=null;const show=()=>{if(document.querySelector(".parish-pwa-prompt"))return;const box=document.createElement("div");box.className="parish-pwa-prompt";box.innerHTML='<img src="/pwa-icon/192.png" alt=""><div><strong>성당 앱을 설치하시겠습니까?</strong><small>홈 화면에서 바로 이용할 수 있습니다.</small></div><button type="button" data-install>설치</button><button type="button" data-close aria-label="닫기">×</button>';document.body.append(box);box.querySelector("[data-close]").onclick=()=>box.remove();box.querySelector("[data-install]").onclick=async()=>{if(promptEvent){await promptEvent.prompt();await promptEvent.userChoice;box.remove()}else if(/iPhone|iPad|iPod/i.test(navigator.userAgent))alert("Safari의 공유 버튼을 누른 후 ‘홈 화면에 추가’를 선택해 주세요.");else alert("브라우저 메뉴에서 ‘앱 설치’ 또는 ‘홈 화면에 추가’를 선택해 주세요.")}};window.addEventListener("beforeinstallprompt",event=>{event.preventDefault();promptEvent=event;show()});window.addEventListener("load",()=>setTimeout(show,1200))})();
 </script>
 <style>.parish-pwa-prompt{position:fixed;z-index:9999;right:14px;bottom:14px;left:14px;display:grid;grid-template-columns:48px 1fr auto auto;align-items:center;gap:11px;max-width:520px;margin:auto;padding:12px;border:1px solid rgba(232,201,103,.55);border-radius:16px;background:rgba(8,22,52,.96);color:#fff;font-family:system-ui,sans-serif;box-shadow:0 14px 38px rgba(0,0,0,.38);backdrop-filter:blur(10px)}.parish-pwa-prompt img{width:48px;height:48px;border-radius:50%;object-fit:cover}.parish-pwa-prompt strong,.parish-pwa-prompt small{display:block}.parish-pwa-prompt strong{font-size:13px}.parish-pwa-prompt small{margin-top:4px;color:#bdc8df;font-size:10px}.parish-pwa-prompt button{padding:9px 12px;border:0;border-radius:8px;background:#e8c967;color:#17244a;font-weight:800;cursor:pointer}.parish-pwa-prompt [data-close]{padding:5px;background:transparent;color:#cbd3e4;font-size:20px}@media(max-width:430px){.parish-pwa-prompt{grid-template-columns:42px 1fr auto}.parish-pwa-prompt img{width:42px;height:42px}.parish-pwa-prompt [data-close]{position:absolute;top:-7px;right:-2px}}</style>
+<style>
+  /* Reserve space for installation instead of covering the landing content. */
+  .parish-pwa-prompt {
+    position: relative;
+    inset: auto;
+    flex-shrink: 0;
+    width: calc(100% - 28px);
+    margin: 0 auto max(10px, env(safe-area-inset-bottom));
+    padding: 8px 12px;
+  }
+</style>
 </html>

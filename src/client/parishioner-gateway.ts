@@ -48,6 +48,13 @@ function mountParishHostFeature(target:string){
 function mountMemberFaithGateway(){
   if(!document.body.classList.contains("member-authenticated")||document.querySelector(".member-faith-gateway")||document.body.dataset.gatewayShown)return;
   const hostTarget=new URLSearchParams(location.search).get("open");
+  // The main site opens the full member home immediately after login.
+  if(location.hostname.toLowerCase()==="paxlink.kr"){
+    document.body.dataset.gatewayShown="1";
+    const requested=hostTarget||new URLSearchParams(location.search).get("menu");
+    if(requested&&Object.hasOwn(gatewayTargets,requested))requestAnimationFrame(()=>gatewayTargets[requested]!());
+    return;
+  }
   if(hostTarget&&["prayer-dream","memorial","gospel-note"].includes(hostTarget)){mountParishHostFeature(hostTarget);return}
   document.body.dataset.gatewayShown="1";
   const layer=document.createElement("section");
